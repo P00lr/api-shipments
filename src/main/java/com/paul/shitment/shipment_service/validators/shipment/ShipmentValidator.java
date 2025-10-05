@@ -1,0 +1,119 @@
+package com.paul.shitment.shipment_service.validators.shipment;
+
+import java.util.Objects;
+import java.util.UUID;
+
+import org.springframework.stereotype.Component;
+
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
+import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
+import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
+import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
+import com.paul.shitment.shipment_service.models.entities.Person;
+import com.paul.shitment.shipment_service.models.entities.Shipment;
+import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
+import com.paul.shitment.shipment_service.repositories.PersonRepository;
+import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
+import com.paul.shitment.shipment_service.validators.office.OfficeValidation;
+import com.paul.shitment.shipment_service.validators.user.UserValidator;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@RequiredArgsConstructor
+@Component
+@Slf4j
+public class ShipmentValidator {
+    private final ShipmentRepository shipmentRepository;
+    private final PersonRepository personRepository;
+
+    private final OfficeValidation officeValidation;
+    private final UserValidator userValidator;
+
+    public void existsShipments() {
+        if (shipmentRepository.count() == 0) {
+            throw new ResourceNotFoundException("No se encontro ningun registro");
+        }
+    }
+
+    public Shipment existsShipment(UUID id) {
+        return shipmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con id: " + id));
+    }
+
+    public void validateShipment(ShipmentRequestDto shipmentDto) {
+        notNull(shipmentDto);
+
+        officeValidation.existsOffice(shipmentDto.originOfficeId());
+        officeValidation.existsOffice(shipmentDto.destinationOfficeId());
+
+        userValidator.existsUser(shipmentDto.userId());
+
+        validationPrice(shipmentDto.shippingCost());
+        validationDescription(shipmentDto.itemDescription());
+
+    }
+
+    // el objeto que ingrese contendra si o si todos los datos del
+    // ShipmentUpdateRequestDto
+    public Shipment validateUpdateShipemnt(UUID id, ShipmentUpdateRequestDto shipmentDto) {
+        
+        notNull(shipmentDto);
+
+        Shipment shipment = existsShipment(id);
+
+        if (shipment.getStatus() != ShipmentStatus.REGISTERED)
+            throw new ShipmentValidationException("No es posible editar, el envio ya fue entregado");
+
+        Person sender = shipment.getSender();
+        Person recipient = shipment.getRecipient();
+
+        if (!Objects.equals(sender.getCi(), shipmentDto.senderCI()) 
+            && personRepository.existsByCi(shipmentDto.senderCI()))
+            throw new PersonValidationException("El CI ya esta registrado");
+
+        if (!Objects.equals(sender.getPhone(), shipmentDto.senderPhone() )
+                && personRepository.existsByPhone(shipmentDto.senderPhone())) {
+            throw new PersonValidationException("El celular ya fue registrado");
+        }
+
+        if (!Objects.equals(recipient.getCi(), shipmentDto.recipientCI()) 
+            && personRepository.existsByCi(shipmentDto.recipientCI()))
+            throw new PersonValidationException("El CI ya esta registrado");
+
+        if (!Objects.equals(recipient.getPhone(), shipmentDto.recipientPhone())
+                && personRepository.existsByPhone(shipmentDto.recipientPhone())) {
+            throw new PersonValidationException("El celular ya fue registrado");
+        }
+
+
+        validationPrice(shipmentDto.shippingCost());
+        validationDescription(shipmentDto.itemDescription());
+
+        return shipment;
+
+    }
+
+    private void notNull(ShipmentRequestDto shipmentDto) {
+        if (shipmentDto == null) {
+            throw new ShipmentValidationException("El objeto shipment no puede ser null");
+        }
+    }
+
+    private void notNull(ShipmentUpdateRequestDto shipmentDto) {
+        if (shipmentDto == null) {
+            throw new ShipmentValidationException("El objeto shipment no puede ser null");
+        }
+    }
+
+    private void validationPrice(Double price) {
+        if (price <= 0)
+            throw new ShipmentValidationException("El precio no debe ser menor a 0");
+    }
+
+    private void validationDescription(String description) {
+        if (description.isBlank())
+            throw new ShipmentValidationException("La descripcion no debe estar vacia");
+    }
+}
