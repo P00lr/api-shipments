@@ -63,6 +63,7 @@ public class PersonValidator {
         return person;
     }
 
+    //auxiliar
     public void ciUnique(String ci) {
 
         if (ci == null)
@@ -74,10 +75,11 @@ public class PersonValidator {
         }
     }
 
+    //auxiliar
     public void phoneUnique(String phone) {
 
         if (phone == null)
-            throw new PersonValidationException("El phone es obligatorio");
+            throw new PersonValidationException("El celular es obligatorio");
 
         if (phone != null && personRepository.existsByPhone(phone)) {
             log.warn("Intento de registrar phone duplicado: {}", phone);

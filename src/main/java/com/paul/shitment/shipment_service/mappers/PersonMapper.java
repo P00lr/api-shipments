@@ -31,8 +31,8 @@ public class PersonMapper {
 
     public static Person dtoToEntity(PersonRequestDto personDto) {
         return new Person(
-            personDto.name(),
-            personDto.ci(),
+            personDto.name().trim(),
+            personDto.ci().trim(),
             personDto.phone()
         );
     }
@@ -41,15 +41,32 @@ public class PersonMapper {
         return new Person(
             userDto.name().trim(),
             userDto.ci().trim(),
-            userDto.phone().trim()
+            userDto.phone()
         );
     }
 
-    public static Person shipmentDtoToPersonSender(ShipmentRequestDto shipmentDto) {
+    public static PersonRequestDto shipmentDtoToPersonSenderDto(ShipmentRequestDto shipmentDto) {
+        return new PersonRequestDto(
+            shipmentDto.senderName().trim(),
+            shipmentDto.senderCI().trim(),
+            shipmentDto.senderPhone()
+        );
+    }
+
+    public static PersonRequestDto shipmentDtoToPersonRecipientDto(ShipmentRequestDto shipmentDto) {
+        return new PersonRequestDto(
+            shipmentDto.recipientName().trim(),
+            shipmentDto.recipientCI().trim(),
+            shipmentDto.recipientPhone()
+        );
+    }
+
+
+    public static Person shipmentDtoToPerson(ShipmentRequestDto shipmentDto) {
         return new Person(
             shipmentDto.senderName().trim(),
             shipmentDto.senderCI().trim(),
-            shipmentDto.senderPhone().trim()
+            shipmentDto.senderPhone()
         );
     }
 

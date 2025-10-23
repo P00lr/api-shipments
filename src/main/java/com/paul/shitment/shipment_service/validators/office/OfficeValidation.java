@@ -27,7 +27,7 @@ public class OfficeValidation {
 
     public Office existsOffice(UUID id) {
         return officeRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("No se encontro el registro con id: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("No se encontro el registro de la oficina con id: " + id));
     }
 
     public void validateOfficeCreate(OfficeRequestDto officeDto) {
@@ -44,37 +44,37 @@ public class OfficeValidation {
         Office office = existsOffice(id);
 
         if(!officeDto.name().equals(office.getName()) && officeRepository.existsByName(officeDto.name()))
-            throw new OfficeValidationException("El nombre ya existe");
+            throw new OfficeValidationException("El nombre de la oficina ya existe");
 
         if(!officeDto.address().equals(office.getAddress()) && officeRepository.existsByAddress(officeDto.address()))
-            throw new OfficeValidationException("La direccion ya existe");
+            throw new OfficeValidationException("La direccion de la oficina ya existe");
         
         if(!officeDto.phone().equals(office.getPhone()) && officeRepository.existsByPhone(officeDto.phone()))
-            throw new OfficeValidationException("El numero de celular ya existe");
+            throw new OfficeValidationException("El numero de celular de la oficina ya existe");
 
         return office;
     }
 
     private void notNull(OfficeRequestDto officeDto) {
         if(officeDto == null) {
-            throw new OfficeValidationException("El objeto no puede estar vacio");
+            throw new OfficeValidationException("El objeto de la oficina no puede estar vacio");
         }
     }
 
     private void nameUnique(String name) {
         if (officeRepository.existsByName(name)) {
-            throw new OfficeValidationException("El nombre ya existe");
+            throw new OfficeValidationException("El nombre de la oficina ya existe");
         }
     }
     private void phoneUnique(String phone) {
         if (officeRepository.existsByPhone(phone)) {
-            throw new OfficeValidationException("El celular ya existe");
+            throw new OfficeValidationException("El celular de la oficina ya existe");
         }
     }
 
     private void addressUnique(String address) {
         if (officeRepository.existsByAddress(address)) {
-            throw new OfficeValidationException("La direccion ya existe");
+            throw new OfficeValidationException("La direccion de la oficina ya existe");
         }
     }
 

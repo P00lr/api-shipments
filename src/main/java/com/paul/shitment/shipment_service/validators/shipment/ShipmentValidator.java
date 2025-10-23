@@ -18,6 +18,7 @@ import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
 import com.paul.shitment.shipment_service.validators.office.OfficeValidation;
 import com.paul.shitment.shipment_service.validators.user.UserValidator;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,7 +95,14 @@ public class ShipmentValidator {
         return shipment;
 
     }
+    public String validateTerm(String term) {
+        if (term == null || term.trim().isEmpty())
+            throw new ValidationException("Ingrese un palabra para buscar, ej: Nro CI, telefono, codigo de envio");
 
+        return term.trim();
+    }
+
+    //metodos auxiliares
     private void notNull(ShipmentRequestDto shipmentDto) {
         if (shipmentDto == null) {
             throw new ShipmentValidationException("El objeto shipment no puede ser null");

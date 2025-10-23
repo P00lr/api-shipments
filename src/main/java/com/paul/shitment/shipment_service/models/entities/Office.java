@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -37,9 +39,11 @@ public class Office {
 
     private boolean active;
     
+    @JsonManagedReference
     @OneToMany(mappedBy = "originOffice")
     private List<Shipment> originShipments = new ArrayList<>();
 
+    @JsonManagedReference
     @OneToMany(mappedBy = "destinationOffice")
     private List<Shipment> destinationShipments = new ArrayList<>();
 

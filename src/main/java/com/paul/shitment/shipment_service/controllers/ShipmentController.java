@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.services.ShipmentService;
 
@@ -65,6 +67,17 @@ public class ShipmentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> canceledShipment(@PathVariable UUID id) {
         return ResponseEntity.ok(shipmentService.canceledShipment(id));
+    }
+
+    @GetMapping("/suggestions")
+    public List<ShipmentSuggestionDTO> getSuggestions(
+            @RequestParam(name = "term", defaultValue = "") String term) {
+        return shipmentService.getSuggestions(term);
+    }
+
+    @PatchMapping("/{id}/deliver")
+    public ResponseEntity<ShipmentResponseDto> markAsDelivered(@PathVariable UUID id) {
+        return ResponseEntity.ok(shipmentService.markAsDelivered(id));
     }
 
 }

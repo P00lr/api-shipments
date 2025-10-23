@@ -20,18 +20,24 @@ public class ShipmentMapper {
             shipment.getId(),
             shipment.getOriginOffice().getName(),
             shipment.getDestinationOffice().getName(),
+
             shipment.getSender().getName() == null ? "Nombre vacio" : shipment.getSender().getName(),
             shipment.getSender().getCi() == null ? "CI vacio" : shipment.getSender().getCi(),
             shipment.getSender().getPhone() == null ? "Numero vacio" : shipment.getSender().getPhone(),
+
             shipment.getRecipient().getName() == null ? "Nombre vacio" : shipment.getRecipient().getName(),
             shipment.getRecipient().getCi() == null ? "CI vacio" : shipment.getRecipient().getCi(),
             shipment.getRecipient().getPhone() == null ? "Numero vacio" : shipment.getRecipient().getPhone(),
+
             shipment.getCreatedBy().getPerson().getName(),
+
             shipment.getItemDescription(),
             shipment.getTrackingCode(),
+            
             shipment.getCreatedAt(),
             shipment.getUpdatedAt(),
             shipment.getDeliveredAt() == null ? "Envio esperando ser recogido..." : shipment.getDeliveredAt().toString(),
+
             shipment.getShippingCost(),
             shipment.getStatus()
         );
