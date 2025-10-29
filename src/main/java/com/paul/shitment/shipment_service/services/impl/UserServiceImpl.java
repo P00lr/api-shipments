@@ -39,9 +39,9 @@ public class UserServiceImpl implements UserService {
     public List<UserResponseDto> getAllUsers() {
 
         log.info("verificando existencia de registros {}", userRepository.count());
-        userValidator.existsUsers();
-
         List<AppUser> users = userRepository.findAll();
+
+        if(users.isEmpty()) return List.of();
         log.info("Obteniendo los registros de la db {}", users.size());
 
         return UserMapper.entitiesToDto(users);

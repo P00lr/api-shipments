@@ -17,7 +17,7 @@ public class Data {
     private final UserRepository userRepository;
 
     public void createData() {
-        Person personSender = new Person("Indira Norely Suarez Quiroga", "7834091", "12345678");
+        Person personSender = new Person("Juana Lopez Sanches", "7834091", "12345678");
         Person personRecipient = new Person("Paul Rodrigo Guasace Yovio", "8072061", "63414902");
 
         Office origginOffice = new Office("Satelite Cooperativa de transporte 15 de abril",

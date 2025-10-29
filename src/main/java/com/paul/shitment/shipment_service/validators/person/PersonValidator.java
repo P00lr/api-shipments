@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
+import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
 import com.paul.shitment.shipment_service.models.entities.Person;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 
@@ -36,7 +37,12 @@ public class PersonValidator {
 
     public Person validateExistsPersonByCi(String ci) {
         return personRepository.findByCi(ci)
-            .orElseThrow(() -> new PersonValidationException("No se encontra el registro con CI: " + ci));
+                .orElseThrow(() -> new PersonValidationException("No se encontra el registro con CI: " + ci));
+    }
+
+    public Person validateExistsPersonByPhone(String phone) {
+        return personRepository.findByPhone(phone)
+            .orElseThrow(() -> new PersonValidationException("No se encontro el registro con phone: " + phone));
     }
 
     public void validatePerson(PersonRequestDto personDto) {
@@ -63,19 +69,24 @@ public class PersonValidator {
         return person;
     }
 
-    //auxiliar
+    public void validateCiMatch(String storedCi, String inputCi) {
+        if (inputCi == null || !storedCi.equals(inputCi)) {
+            throw new ShipmentValidationException("CI incorrecto para confirmar la entrega.");
+        }
+    }
+
+    // auxiliar
     public void ciUnique(String ci) {
 
         if (ci == null)
             throw new PersonValidationException("El CI es obligatorio");
 
         if (personRepository.existsByCi(ci)) {
-            log.warn("Intento de registrar DNI duplicado: {}", ci);
+            log.warn("Intento de registrar CI duplicado: {}", ci);
             throw new PersonValidationException("El CI ya esta registrado");
         }
     }
 
-    //auxiliar
     public void phoneUnique(String phone) {
 
         if (phone == null)

@@ -12,12 +12,12 @@ import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 public interface ShipmentService {
 
     List<ShipmentResponseDto> getAllShipments();
-    PageResponse<ShipmentResponseDto> getAllShipmentsPaged(int pageNo, int pageSize, String sortBy);
+    PageResponse<ShipmentResponseDto> getAllShipmentsPaged(int pageNo, int pageSize);
     ShipmentResponseDto getShipment(UUID id);
     ShipmentResponseDto createShipment(ShipmentRequestDto shipmenttDto);
     ShipmentResponseDto updateShipment(UUID id, ShipmentUpdateRequestDto shipmentDto);
     ShipmentResponseDto canceledShipment(UUID id);
     List<ShipmentSuggestionDTO> getSuggestions(String term);
-    ShipmentResponseDto markAsDelivered(UUID id);
+    ShipmentResponseDto markAsDelivered(UUID id, String ci);
     
 }

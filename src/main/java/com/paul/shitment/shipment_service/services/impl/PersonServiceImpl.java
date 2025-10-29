@@ -34,9 +34,10 @@ public class PersonServiceImpl implements PersonService {
     @Override
     public List<PersonResponseDto> getAllPersons() {
         log.info("Verficando existencia de personas");
-        personValidator.validateExistsPersons();
-
         List<Person> persons = personRepository.findAll();
+
+        if (persons.isEmpty()) return List.of();
+
         log.info("Se encontro Lista de personas {}", persons.size());
 
         return PersonMapper.entitiesToDtos(persons);
@@ -83,6 +84,12 @@ public class PersonServiceImpl implements PersonService {
     public PersonResponseDto getPersonByCI(String ci) {
         log.info("Verificando si existe la persona por ci: {}", ci);
         return PersonMapper.entityToDto(personValidator.validateExistsPersonByCi(ci));
+    }
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        log.info("Verificando si existe la persona por phone: {}", phone);
+        return personRepository.existsByPhone(phone);
     }
 
     @Override

@@ -33,11 +33,11 @@ public class OfficeServiceImpl implements OfficeService {
     @Override
     public List<OfficeResponseDto> getAllOffices() {
         log.info("Verificando existencia de registros");
-        officeValidation.existsOffices();
-
         List<Office> offices = officeRepository.findAll();
-        log.info("Listando oficinas");
 
+        if(offices.isEmpty()) return List.of();
+
+        log.info("Listando oficinas");
         return OfficeMapper.entitiesToDto(offices);
     }
 

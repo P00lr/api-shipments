@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentDeliveryRequest;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
@@ -42,10 +43,13 @@ public class ShipmentController {
     @GetMapping("/paged")
     public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(
             @RequestParam(defaultValue = "0") int pageNo,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(defaultValue = "createdAt") String sortBy) {
-        return ResponseEntity.ok(shipmentService.getAllShipmentsPaged(pageNo, pageSize, sortBy));
+            @RequestParam(defaultValue = "5") int pageSize) {
 
+        // No pasamos sortBy porque el servicio maneja el orden personalizado
+        // internamente
+        PageResponse<ShipmentResponseDto> response = shipmentService.getAllShipmentsPaged(pageNo, pageSize);
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -76,8 +80,13 @@ public class ShipmentController {
     }
 
     @PatchMapping("/{id}/deliver")
-    public ResponseEntity<ShipmentResponseDto> markAsDelivered(@PathVariable UUID id) {
-        return ResponseEntity.ok(shipmentService.markAsDelivered(id));
+    public ResponseEntity<ShipmentResponseDto> markAsDelivered(
+            @PathVariable UUID id,
+            @RequestBody(required = false) ShipmentDeliveryRequest request) {
+
+        String ci = request != null ? request.ci() : null;
+
+        return ResponseEntity.ok(shipmentService.markAsDelivered(id, ci));
     }
 
 }

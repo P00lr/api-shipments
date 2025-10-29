@@ -2,14 +2,13 @@ package com.paul.shitment.shipment_service.services.impl;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,13 +52,42 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Override
     public List<ShipmentResponseDto> getAllShipments() {
-        log.info("Buscando registros de shipments");
-        shipmentValidator.existsShipments();
+        log.info("Buscando registros de shipments ordenados por fecha DESC");
+        List<Shipment> shipments = shipmentRepository.findAllOrdered();
 
-        List<Shipment> shipments = shipmentRepository.findAll();
-        log.info("Si se encontraron registros");
+        if (shipments.isEmpty()) {
+            log.info("No se encontraron registros");
+            return List.of(); // devolver lista vacía
+        }
 
         return ShipmentMapper.entitiesToDto(shipments);
+    }
+
+    @Override
+    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(int pageNo, int pageSize) {
+        log.info("Buscando registros de shipments paginados");
+
+        PageRequest pageRequest = PageRequest.of(pageNo, pageSize);
+        Page<Shipment> shipments = shipmentRepository.findAllOrdered(pageRequest);
+
+        if (shipments.isEmpty()) {
+            return new PageResponse<>(List.of(), 0, pageSize, 0L, 0, true, true);
+        }
+
+        List<ShipmentResponseDto> shipmentDtos = shipments
+                .getContent()
+                .stream()
+                .map(ShipmentMapper::entityToDto)
+                .toList();
+
+        return new PageResponse<>(
+                shipmentDtos,
+                shipments.getNumber(),
+                shipments.getSize(),
+                shipments.getTotalElements(),
+                shipments.getTotalPages(),
+                shipments.isFirst(),
+                shipments.isLast());
     }
 
     @Override
@@ -86,32 +114,6 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(int pageNo, int pageSize, String sortBy) {
-        log.info("Buscando registros de shipments paginados");
-        shipmentValidator.existsShipments();
-
-        PageRequest pageRequest = PageRequest.of(pageNo, pageSize, Sort.by(sortBy).descending());
-
-        Page<Shipment> shipments = shipmentRepository.findAll(pageRequest);
-        log.info("Se encontraron registros");
-
-        List<ShipmentResponseDto> listShipment = new ArrayList<>();
-        for (Shipment shipment : shipments.getContent()) {
-            listShipment.add(ShipmentMapper.entityToDto(shipment));
-        }
-
-        return new PageResponse<>(
-                listShipment,
-                shipments.getNumber(), // página actual
-                shipments.getSize(), // tamaño de página
-                shipments.getTotalElements(), // total de registros
-                shipments.getTotalPages(), // total de páginas
-                shipments.isFirst(), // ¿es la primera página?
-                shipments.isLast() // ¿es la última página?
-        );
-    }
-
-    @Override
     public ShipmentResponseDto getShipment(UUID id) {
         log.info("Verificando existencia de envio con id: {}", id);
 
@@ -132,11 +134,8 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         AppUser user = userValidator.existsUser(shipmentDto.userId());
 
-        Person sender = updateAttributeSender(shipmentDto);
-        personRepository.save(sender);
-
-        Person recipient = updateAttributeRecipient(shipmentDto);
-        personRepository.save(recipient);
+        Person sender = handlePersonCreateOrUpdate(shipmentDto, true); // true para sender
+        Person recipient = handlePersonCreateOrUpdate(shipmentDto, false); // false para recipient
 
         Shipment shipment = Shipment.builder()
                 .originOffice(originOffice)
@@ -214,62 +213,22 @@ public class ShipmentServiceImpl implements ShipmentService {
         return "TRF-" + formatted;
     }
 
-    /*
-     * private boolean updateIfChanged(ShipmentRequestDto shipmentDto) {
-     * Person person =
-     * personValidator.validateExistsPersonByCi(shipmentDto.senderCI());
-     * 
-     * Person personDto = PersonMapper.shipmentDtoToPerson(shipmentDto);
-     * 
-     * return person.equals(personDto);
-     * }
-     */
-
-    private Person updateAttributeSender(ShipmentRequestDto shipmentDto) {
-
-        PersonRequestDto personDto = PersonMapper.shipmentDtoToPersonSenderDto(shipmentDto);
-
-        Person personForId = personValidator.validateExistsPersonByCi(shipmentDto.senderCI());
-
-        Person personSender = personValidator.validateUpdate(personDto, personForId.getId());
-
-        personSender.setCi(!personSender.getCi().equals(personDto.ci()) ? personDto.ci() : personSender.getCi());
-        personSender
-                .setName(!personSender.getName().equals(personDto.name()) ? personDto.name() : personSender.getName());
-        personSender.setPhone(
-                !personSender.getPhone().equals(personDto.phone()) ? personDto.phone() : personSender.getPhone());
-
-        return personSender;
-    }
-
-    private Person updateAttributeRecipient(ShipmentRequestDto shipmentDto) {
-        PersonRequestDto PersonDto = PersonMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
-
-        Person personForId = personValidator.validateExistsPersonByCi(shipmentDto.recipientCI());
-
-        Person personRecipient = personValidator.validateUpdate(PersonDto, personForId.getId());
-
-        personRecipient
-                .setCi(!personRecipient.getCi().equals(PersonDto.ci()) ? PersonDto.ci() : personRecipient.getCi());
-        personRecipient.setName(
-                !personRecipient.getName().equals(PersonDto.name()) ? PersonDto.name() : personRecipient.getName());
-        personRecipient.setPhone(
-                !personRecipient.getPhone().equals(PersonDto.phone()) ? PersonDto.phone() : personRecipient.getPhone());
-
-        return personRecipient;
-    }
-
     @Transactional
     @Override
-    public ShipmentResponseDto markAsDelivered(UUID id) {
+    public ShipmentResponseDto markAsDelivered(UUID id, String ci) {
         log.info("Marcando envío [{}] como entregado", id);
+
         Shipment shipment = shipmentValidator.existsShipment(id);
+        String dbCI = shipment.getRecipient().getCi();
 
-        shipment.deliver(); // la logica encapsulada en la entidad
+        if (shipment.getShippingCost() >= 50) {
+            personValidator.validateCiMatch(dbCI, ci != null ? ci.trim() : null);
+        }
 
+        shipment.deliver();
         shipmentRepository.save(shipment);
-        log.info("Envío [{}] entregado correctamente", id);
 
+        log.info("Envío [{}] entregado correctamente", id);
         return ShipmentMapper.entityToDto(shipment);
     }
 
@@ -287,25 +246,52 @@ public class ShipmentServiceImpl implements ShipmentService {
         return ShipmentMapper.entityToDto(shipment);
     }
 
-    // metodo auxiliar
-    /*
-     * private Person handlePersonOverride(Person person, String name, String phone,
-     * Boolean updateGlobally) {
-     * boolean override = name != null || phone != null;
-     * if (!override)
-     * return person;
-     * 
-     * String tempName = name != null ? name : person.getName();
-     * String tempPhone = phone != null ? phone : person.getPhone();
-     * 
-     * if (Boolean.TRUE.equals(updateGlobally)) {
-     * person.setName(tempName);
-     * person.setPhone(tempPhone);
-     * personRepository.save(person);
-     * }
-     * 
-     * return person;
-     * }
-     */
+    // PERSONA
+
+    private Person handlePersonCreateOrUpdate(ShipmentRequestDto shipmentDto, boolean isSender) {
+        PersonRequestDto personDto = isSender ? PersonMapper.shipmentDtoToPersonSenderDto(shipmentDto)
+                : PersonMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
+
+        String ci = isSender ? shipmentDto.senderCI() : shipmentDto.recipientCI();
+
+        try {
+            // Intentar encontrar la persona por CI
+            Person existingPerson = personRepository.findByCi(ci).orElse(null);
+
+            if (existingPerson != null) {
+                // Actualizar persona existente
+                log.info("Actualizando persona existente con CI: {}", ci);
+                return updatePersonAttributes(personDto, existingPerson.getId());
+            } else {
+                // Crear nueva persona
+                log.info("Creando nueva persona con CI: {}", ci);
+                personValidator.validatePerson(personDto);
+                Person newPerson = PersonMapper.dtoToEntity(personDto);
+                return personRepository.save(newPerson);
+            }
+        } catch (DataAccessException e) {
+            log.error("Error al procesar persona: {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    private Person updatePersonAttributes(
+            PersonRequestDto personDto,
+            UUID personId) {
+
+        Person person = personValidator.validateUpdate(personDto, personId);
+
+        if (!Objects.equals(person.getCi(), personDto.ci())) {
+            person.setCi(personDto.ci());
+        }
+        if (!Objects.equals(person.getName(), personDto.name())) {
+            person.setName(personDto.name());
+        }
+        if (!Objects.equals(person.getPhone(), personDto.phone())) {
+            person.setPhone(personDto.phone());
+        }
+
+        return person;
+    }
 
 }

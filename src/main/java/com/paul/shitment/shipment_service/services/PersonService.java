@@ -12,6 +12,7 @@ public interface PersonService {
     PageResponse<PersonResponseDto> getAllPersonsPaged(int pageNo, int size, String sortBy);
     PersonResponseDto getPerson(UUID id);
     PersonResponseDto getPersonByCI(String ci);
+    boolean existsByPhone(String phone);
     PersonResponseDto createPerson(PersonRequestDto person);
     PersonResponseDto updatePerson(UUID id, PersonRequestDto person);
     PersonResponseDto deletePerson(UUID id);

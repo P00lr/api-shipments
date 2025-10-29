@@ -51,6 +51,11 @@ public class PersonController {
         return ResponseEntity.ok(personService.getPersonByCI(ci));
     }
 
+    @GetMapping("/phone/{phone}")
+    public ResponseEntity<Boolean> existsByPhone(@PathVariable String phone) {
+        return ResponseEntity.ok(personService.existsByPhone(phone));
+    }
+
     @PostMapping
     public ResponseEntity<PersonResponseDto> createPerson(@Valid @RequestBody PersonRequestDto personDto) {
         PersonResponseDto created = personService.createPerson(personDto);

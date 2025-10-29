@@ -3,6 +3,8 @@ package com.paul.shitment.shipment_service.repositories;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +15,30 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
+
+    @Query("""
+                SELECT s 
+                FROM Shipment s
+                ORDER BY
+                    CASE
+                        WHEN s.status = 'REGISTERED' THEN 1
+                        ELSE 2
+                    END,
+                    s.createdAt DESC
+            """)
+    Page<Shipment> findAllOrdered(Pageable pageable);
+
+    @Query("""
+    SELECT s FROM Shipment s
+    ORDER BY 
+        CASE 
+            WHEN s.status = 'REGISTERED' THEN 1 
+            ELSE 2 
+        END,
+        s.createdAt DESC
+""")
+List<Shipment> findAllOrdered();
+
 
     @Query("""
                 SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
