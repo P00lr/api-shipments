@@ -47,6 +47,7 @@ public class Office {
     @OneToMany(mappedBy = "destinationOffice")
     private List<Shipment> destinationShipments = new ArrayList<>();
 
+
     public Office(String name, String address, String phone) {
         this.name = name;
         this.address = address;

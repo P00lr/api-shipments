@@ -17,7 +17,7 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
 
     @Query("""
-                SELECT s 
+                SELECT s
                 FROM Shipment s
                 ORDER BY
                     CASE
@@ -29,63 +29,27 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     Page<Shipment> findAllOrdered(Pageable pageable);
 
     @Query("""
-    SELECT s FROM Shipment s
-    ORDER BY 
-        CASE 
-            WHEN s.status = 'REGISTERED' THEN 1 
-            ELSE 2 
-        END,
-        s.createdAt DESC
-""")
-List<Shipment> findAllOrdered();
-
-
-    @Query("""
-                SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
-                    s.id, s.trackingCode, s.itemDescription, r.name, r.ci, r.phone, s.status, s.shippingCost)
-                FROM Shipment s
-                LEFT JOIN s.recipient r
-                WHERE LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%'))
-                AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
-                ORDER BY s.createdAt DESC
+                SELECT s FROM Shipment s
+                ORDER BY
+                    CASE
+                        WHEN s.status = 'REGISTERED' THEN 1
+                        ELSE 2
+                    END,
+                    s.createdAt DESC
             """)
-    List<ShipmentSuggestionDTO> searchByTrackingCode(@Param("term") String term);
+    List<Shipment> findAllOrdered();
 
     @Query("""
                 SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
                     s.id, s.trackingCode, s.itemDescription, r.name, r.ci, r.phone, s.status, s.shippingCost)
                 FROM Shipment s
                 LEFT JOIN s.recipient r
-                WHERE LOWER(r.ci) LIKE LOWER(CONCAT('%', :term, '%'))
-                AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
-                ORDER BY s.createdAt DESC
-            """)
-    List<ShipmentSuggestionDTO> searchByCi(@Param("term") String term);
-
-    @Query("""
-                SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
-                    s.id, s.trackingCode, s.itemDescription, r.name, r.ci, r.phone, s.status, s.shippingCost)
-                FROM Shipment s
-                LEFT JOIN s.recipient r
-                WHERE LOWER(r.phone) LIKE LOWER(CONCAT('%', :term, '%'))
-                AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
-                ORDER BY s.createdAt DESC
-            """)
-    List<ShipmentSuggestionDTO> searchByPhone(@Param("term") String term);
-
-    @Query("""
-                SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
-                    s.id, s.trackingCode, s.itemDescription, r.name, r.ci, r.phone, s.status, s.shippingCost)
-                FROM Shipment s
-                LEFT JOIN s.recipient r
-                WHERE (
-                    LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%'))
+                WHERE (:term IS NULL OR LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%'))
                     OR LOWER(r.ci) LIKE LOWER(CONCAT('%', :term, '%'))
-                    OR LOWER(r.phone) LIKE LOWER(CONCAT('%', :term, '%'))
-                )
-                AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
+                    OR LOWER(r.phone) LIKE LOWER(CONCAT('%', :term, '%')))
+                    AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
                 ORDER BY s.createdAt DESC
             """)
-    List<ShipmentSuggestionDTO> searchShipmentsByTerm(@Param("term") String term);
+    List<ShipmentSuggestionDTO> searchByTerm(@Param("term") String term, Pageable pageable);
 
 }

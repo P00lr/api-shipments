@@ -15,7 +15,7 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
-import com.paul.shitment.shipment_service.validators.office.OfficeValidation;
+import com.paul.shitment.shipment_service.validators.OfficeValidator;
 import com.paul.shitment.shipment_service.validators.user.UserValidator;
 
 import jakarta.validation.ValidationException;
@@ -29,7 +29,7 @@ public class ShipmentValidator {
     private final ShipmentRepository shipmentRepository;
     private final PersonRepository personRepository;
 
-    private final OfficeValidation officeValidation;
+    private final OfficeValidator officeValidation;
     private final UserValidator userValidator;
 
     public void existsShipments() {
@@ -44,10 +44,9 @@ public class ShipmentValidator {
     }
 
     public void validateShipment(ShipmentRequestDto shipmentDto) {
-        notNull(shipmentDto);
 
-        officeValidation.existsOffice(shipmentDto.originOfficeId());
-        officeValidation.existsOffice(shipmentDto.destinationOfficeId());
+        officeValidation.getOfficeByIdOrThrow(shipmentDto.originOfficeId());
+        officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
         userValidator.existsUser(shipmentDto.userId());
 
@@ -60,8 +59,6 @@ public class ShipmentValidator {
     // ShipmentUpdateRequestDto
     public Shipment validateUpdateShipemnt(UUID id, ShipmentUpdateRequestDto shipmentDto) {
         
-        notNull(shipmentDto);
-
         Shipment shipment = existsShipment(id);
 
         if (shipment.getStatus() != ShipmentStatus.REGISTERED)
@@ -103,17 +100,6 @@ public class ShipmentValidator {
     }
 
     //metodos auxiliares
-    private void notNull(ShipmentRequestDto shipmentDto) {
-        if (shipmentDto == null) {
-            throw new ShipmentValidationException("El objeto shipment no puede ser null");
-        }
-    }
-
-    private void notNull(ShipmentUpdateRequestDto shipmentDto) {
-        if (shipmentDto == null) {
-            throw new ShipmentValidationException("El objeto shipment no puede ser null");
-        }
-    }
 
     private void validationPrice(Double price) {
         if (price <= 0)

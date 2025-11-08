@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
 import com.paul.shitment.shipment_service.services.ShipmentService;
-import com.paul.shitment.shipment_service.validators.office.OfficeValidation;
+import com.paul.shitment.shipment_service.validators.OfficeValidator;
 import com.paul.shitment.shipment_service.validators.person.PersonValidator;
 import com.paul.shitment.shipment_service.validators.shipment.ShipmentValidator;
 import com.paul.shitment.shipment_service.validators.user.UserValidator;
@@ -42,12 +43,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ShipmentServiceImpl implements ShipmentService {
 
+    private static final int MAX_RESULTS_CI_PHONE = 3;
+
     private final ShipmentRepository shipmentRepository;
     private final ShipmentValidator shipmentValidator;
+
     private final PersonRepository personRepository;
     private final PersonValidator personValidator;
+
     private final UserValidator userValidator;
-    private final OfficeValidation officeValidation;
+    private final OfficeValidator officeValidation;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -92,26 +97,30 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Override
     public List<ShipmentSuggestionDTO> getSuggestions(String term) {
-
         String validatedTerm = shipmentValidator.validateTerm(term);
-        // Si tiene letras o guiones - buscar por trackingCode
+
+        Pageable limited = PageRequest.of(0, MAX_RESULTS_CI_PHONE);
+
+        //Tracking code (letras o guiones) → resultado único, sin límite
         if (validatedTerm.matches(".*[a-zA-Z-].*")) {
-            return shipmentRepository.searchByTrackingCode(validatedTerm);
+            return shipmentRepository.searchByTerm(validatedTerm, Pageable.unpaged());
         }
 
-        // Si son solo números
-        if (validatedTerm.matches("\\d{8}")) { // teléfono
-            return shipmentRepository.searchByPhone(validatedTerm);
-        }
-
-        // Si son 7 u 8 dígitos buscar por CI
+        //CI → últimos 3 registros REGISTERED
         if (validatedTerm.matches("\\d{7,8}(-[a-zA-Z]{1,2})?")) {
-            return shipmentRepository.searchByCi(validatedTerm);
+            return shipmentRepository.searchByTerm(validatedTerm, limited);
         }
 
-        // Por defecto, usa busqueda general flexible
-        return shipmentRepository.searchShipmentsByTerm(validatedTerm);
+        //Teléfono → últimos 3 registros REGISTERED
+        if (validatedTerm.matches("\\d{8}")) {
+            return shipmentRepository.searchByTerm(validatedTerm, limited);
+        }
+
+        //Fallback general → últimos 3 registros REGISTERED
+        return shipmentRepository.searchByTerm(validatedTerm, limited);
     }
+
+
 
     @Override
     public ShipmentResponseDto getShipment(UUID id) {
@@ -129,8 +138,8 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         shipmentValidator.validateShipment(shipmentDto);
 
-        Office originOffice = officeValidation.existsOffice(shipmentDto.originOfficeId());
-        Office destinationOffice = officeValidation.existsOffice(shipmentDto.destinationOfficeId());
+        Office originOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.originOfficeId());
+        Office destinationOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
         AppUser user = userValidator.existsUser(shipmentDto.userId());
 
@@ -208,8 +217,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     private String generateTrackingCode() {
-        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        String formatted = String.format("%s-%s", uuid.substring(0, 4), uuid.substring(4, 8));
+        String uuid = UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 8)
+                .toUpperCase();
+        String formatted = String.format("%s-%s",
+                uuid.substring(0, 4),
+                uuid.substring(4, 8));
         return "TRF-" + formatted;
     }
 

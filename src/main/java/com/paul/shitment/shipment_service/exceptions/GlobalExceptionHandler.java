@@ -14,6 +14,7 @@ import com.paul.shitment.shipment_service.exceptions.validation.OfficeValidation
 import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
 import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
+import com.paul.shitment.shipment_service.exceptions.validation.TransportCooperativeException;
 import com.paul.shitment.shipment_service.exceptions.validation.UserValidationException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,7 +46,6 @@ public class GlobalExceptionHandler {
             MethodArgumentNotValidException ex,
             HttpServletRequest request) {
 
-        // Construimos un mensaje con todos los errores de campos
         String errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -116,6 +116,21 @@ public class GlobalExceptionHandler {
         error.setPath(request.getRequestURI());
         error.setDate(LocalDateTime.now());
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(TransportCooperativeException.class)
+    public ResponseEntity<ErrorResponseDto> handleTransportCooperativeException(
+            TransportCooperativeException ex, HttpServletRequest request) {
+
+        ErrorResponseDto error = new ErrorResponseDto(
+            ex.getMessage(),
+            HttpStatus.BAD_REQUEST.name(),
+            LocalDateTime.now(),
+            HttpStatus.BAD_REQUEST.value(),
+            request.getRequestURI()
+    );
+
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 }

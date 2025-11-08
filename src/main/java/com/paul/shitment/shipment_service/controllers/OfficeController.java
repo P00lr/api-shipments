@@ -21,6 +21,7 @@ import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.services.OfficeService;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 
 @CrossOrigin(origins = "http://localhost:5173")
@@ -46,22 +47,22 @@ public class OfficeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<OfficeResponseDto> getOffice(@PathVariable UUID id) {
-        return ResponseEntity.ok(officeService.getOffice(id));
+        return ResponseEntity.ok(officeService.getOfficeById(id));
     }
 
     @PostMapping
-    public ResponseEntity<OfficeResponseDto> createOffice(@Valid @RequestBody OfficeRequestDto officeDto) {
+    public ResponseEntity<OfficeResponseDto> createOffice(@Valid @NotNull @RequestBody OfficeRequestDto officeDto) {
         return ResponseEntity.ok(officeService.createOffice(officeDto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<OfficeResponseDto> updateOffice(@PathVariable UUID id,@Valid @RequestBody OfficeRequestDto officeDto) {
+    public ResponseEntity<OfficeResponseDto> updateOffice(@PathVariable UUID id,@Valid @NotNull@RequestBody OfficeRequestDto officeDto) {
         return ResponseEntity.ok(officeService.updateOffice(id, officeDto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<OfficeResponseDto> deactivateOffice(@PathVariable UUID id) {
-        return ResponseEntity.ok(officeService.deactivateOffice(id));
+        return ResponseEntity.ok(officeService.deactivateOfficeById(id));
     }
 
 }
