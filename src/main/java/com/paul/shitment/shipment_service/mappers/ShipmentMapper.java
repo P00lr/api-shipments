@@ -15,7 +15,7 @@ import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 @Component
 public class ShipmentMapper {
 
-    public static ShipmentResponseDto entityToDto(Shipment shipment) {
+    public ShipmentResponseDto entityToDto(Shipment shipment) {
         return new ShipmentResponseDto(
             shipment.getId(),
             shipment.getOriginOffice().getName(),
@@ -43,13 +43,13 @@ public class ShipmentMapper {
         );
     }
 
-    public static List<ShipmentResponseDto> entitiesToDto(List<Shipment> shipments) {
+    public List<ShipmentResponseDto> entitiesToDto(List<Shipment> shipments) {
         return shipments.stream()
-            .map(ShipmentMapper::entityToDto)
+            .map((shipment) -> entityToDto(shipment))
             .collect(Collectors.toList());
     }
 
-    public static Shipment toShipment(
+    public Shipment toShipment(
         Office originOffice, 
         Office destinationOffice, 
         Person sender, 

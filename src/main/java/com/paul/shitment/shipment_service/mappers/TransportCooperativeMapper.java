@@ -19,10 +19,11 @@ public class TransportCooperativeMapper {
         );
     }
 
-    public TransportCooperative requestToEntity(TransportCooperativeRequest request) {
+    public TransportCooperative dtoToEntity(TransportCooperativeRequest dto) {
         return new TransportCooperative(
-            request.name(),
-            request.isActive()
+            dto.name(),
+            dto.isActive()
+
         );
     }
 
@@ -30,5 +31,9 @@ public class TransportCooperativeMapper {
         return cooperatives.stream()
             .map(this::entityToDto)
             .toList();
+    }
+
+    public void updateEntity(TransportCooperative entity, TransportCooperativeRequest request) {
+        entity.setName(request.name());
     }
 }

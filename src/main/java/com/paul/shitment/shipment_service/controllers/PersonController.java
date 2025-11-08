@@ -43,7 +43,7 @@ public class PersonController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PersonResponseDto> getPerson(@PathVariable UUID id) {
-        return ResponseEntity.ok(personService.getPerson(id));
+        return ResponseEntity.ok(personService.getPersonById(id));
     }
 
     @GetMapping("/ci/{ci}")

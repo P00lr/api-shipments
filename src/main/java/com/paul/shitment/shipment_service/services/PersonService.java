@@ -10,7 +10,7 @@ import com.paul.shitment.shipment_service.dto.person.PersonResponseDto;
 public interface PersonService {
     List<PersonResponseDto> getAllPersons();
     PageResponse<PersonResponseDto> getAllPersonsPaged(int pageNo, int size, String sortBy);
-    PersonResponseDto getPerson(UUID id);
+    PersonResponseDto getPersonById(UUID id);
     PersonResponseDto getPersonByCI(String ci);
     boolean existsByPhone(String phone);
     PersonResponseDto createPerson(PersonRequestDto person);

@@ -20,7 +20,7 @@ import com.paul.shitment.shipment_service.models.entities.Person;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.UserRepository;
 import com.paul.shitment.shipment_service.services.UserService;
-import com.paul.shitment.shipment_service.validators.user.UserValidator;
+import com.paul.shitment.shipment_service.validators.UserValidator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserServiceImpl implements UserService {
 
     private final PersonRepository personRepository;
+    private final PersonMapper personMapper;
 
     private final UserRepository userRepository;
     private final UserValidator userValidator;
@@ -38,13 +39,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<UserResponseDto> getAllUsers() {
 
-        log.info("verificando existencia de registros {}", userRepository.count());
-        List<AppUser> users = userRepository.findAll();
-
-        if(users.isEmpty()) return List.of();
-        log.info("Obteniendo los registros de la db {}", users.size());
-
-        return UserMapper.entitiesToDto(users);
+        log.info("verificando existencia de registros");
+        return UserMapper.entitiesToDto(userRepository.findAll());
 
     }
 
@@ -70,14 +66,13 @@ public class UserServiceImpl implements UserService {
 
         // Crear Page<UserResponseDto> con la misma info de paginación
         return new PageResponse<>(
-            dtoList, 
-            userPage.getNumber(), 
-            userPage.getSize(), 
-            userPage.getTotalElements(),
-            userPage.getTotalPages(),
-            userPage.isFirst(), 
-            userPage.isLast()
-        );
+                dtoList,
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isFirst(),
+                userPage.isLast());
     }
 
     @Override
@@ -93,7 +88,7 @@ public class UserServiceImpl implements UserService {
         log.info("Verificando que los datos sean correctos");
         userValidator.validateCreateUser(userDto);
 
-        Person person = PersonMapper.userDtoToEntityPerson(userDto);
+        Person person = personMapper.userDtoToEntityPerson(userDto);
         person.setRegistered(true);
 
         try {

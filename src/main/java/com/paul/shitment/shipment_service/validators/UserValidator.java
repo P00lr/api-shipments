@@ -1,4 +1,4 @@
-package com.paul.shitment.shipment_service.validators.user;
+package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
@@ -9,7 +9,6 @@ import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFound
 import com.paul.shitment.shipment_service.exceptions.validation.UserValidationException;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
 import com.paul.shitment.shipment_service.repositories.UserRepository;
-import com.paul.shitment.shipment_service.validators.person.PersonValidator;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,7 +1,5 @@
-package com.paul.shitment.shipment_service.validators.person;
+package com.paul.shitment.shipment_service.validators;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -13,7 +11,6 @@ import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidati
 import com.paul.shitment.shipment_service.models.entities.Person;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 
-import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,49 +21,39 @@ public class PersonValidator {
 
     private final PersonRepository personRepository;
 
-    public void validateExistsPersons() {
-        if (personRepository.count() == 0) {
-            throw new ResourceNotFoundException("No se encontraron registros");
-        }
-    }
-
-    public Person validateExistsPerson(UUID id) {
+    public Person getPersonByIdOrThrow(UUID id) {
         return personRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontro el registro con id: " + id));
     }
 
-    public Person validateExistsPersonByCi(String ci) {
+    public Person getPersonByCiOrThrow(String ci) {
         return personRepository.findByCi(ci)
                 .orElseThrow(() -> new PersonValidationException("No se encontra el registro con CI: " + ci));
     }
 
-    public Person validateExistsPersonByPhone(String phone) {
+    public Person getPersonByPhoneOrThrow(String phone) {
         return personRepository.findByPhone(phone)
-            .orElseThrow(() -> new PersonValidationException("No se encontro el registro con phone: " + phone));
+                .orElseThrow(() -> new PersonValidationException("No se encontro el registro con phone: " + phone));
     }
 
-    public void validatePerson(PersonRequestDto personDto) {
+    public void validateForCreate(PersonRequestDto personDto) {
 
-        personNotNull(personDto);
         ciUnique(personDto.ci());
         phoneUnique(personDto.phone());
 
     }
 
-    public Person validateUpdate(PersonRequestDto personDto, UUID id) {
-        Person person = validateExistsPerson(id);
+    public void validateForUpdate(PersonRequestDto personDto, UUID id) {
+        Person person = getPersonByIdOrThrow(id);
 
-        personNotNull(personDto);
-
-        if (!Objects.equals(person.getCi(), personDto.ci()) && personRepository.existsByCi(personDto.ci()))
+        if (!person.getCi().equals(personDto.ci()) 
+                && personRepository.existsByCi(personDto.ci()))
             throw new PersonValidationException("El CI ya esta registrado");
 
-        if (!Objects.equals(personDto.phone(), person.getPhone())
+        if (!personDto.phone().equals(person.getPhone())
                 && personRepository.existsByPhone(personDto.phone())) {
             throw new PersonValidationException("El celular ya fue registrado");
         }
-
-        return person;
     }
 
     public void validateCiMatch(String storedCi, String inputCi) {
@@ -75,7 +62,7 @@ public class PersonValidator {
         }
     }
 
-    // auxiliar
+    // METODOS AUXILIARES
     public void ciUnique(String ci) {
 
         if (ci == null)
@@ -98,13 +85,4 @@ public class PersonValidator {
         }
     }
 
-    public Optional<Person> validateGetPersonByCi(String ci) {
-        return personRepository.findByCi(ci);
-    }
-
-    private void personNotNull(PersonRequestDto person) {
-        if (person == null) {
-            throw new ValidationException("El objeto no puede estar vacio");
-        }
-    }
 }

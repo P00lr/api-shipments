@@ -1,4 +1,4 @@
-package com.paul.shitment.shipment_service.validators.shipment;
+package com.paul.shitment.shipment_service.validators;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -15,8 +15,6 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
-import com.paul.shitment.shipment_service.validators.OfficeValidator;
-import com.paul.shitment.shipment_service.validators.user.UserValidator;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;

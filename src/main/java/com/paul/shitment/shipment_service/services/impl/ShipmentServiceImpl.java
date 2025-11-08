@@ -3,7 +3,6 @@ package com.paul.shitment.shipment_service.services.impl;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.dao.DataAccessException;
@@ -31,9 +30,9 @@ import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
 import com.paul.shitment.shipment_service.services.ShipmentService;
 import com.paul.shitment.shipment_service.validators.OfficeValidator;
-import com.paul.shitment.shipment_service.validators.person.PersonValidator;
-import com.paul.shitment.shipment_service.validators.shipment.ShipmentValidator;
-import com.paul.shitment.shipment_service.validators.user.UserValidator;
+import com.paul.shitment.shipment_service.validators.PersonValidator;
+import com.paul.shitment.shipment_service.validators.ShipmentValidator;
+import com.paul.shitment.shipment_service.validators.UserValidator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,9 +46,11 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private final ShipmentRepository shipmentRepository;
     private final ShipmentValidator shipmentValidator;
+    private final ShipmentMapper shipmentMapper;
 
     private final PersonRepository personRepository;
     private final PersonValidator personValidator;
+    private final PersonMapper personMapper;
 
     private final UserValidator userValidator;
     private final OfficeValidator officeValidation;
@@ -65,7 +66,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             return List.of(); // devolver lista vacía
         }
 
-        return ShipmentMapper.entitiesToDto(shipments);
+        return shipmentMapper.entitiesToDto(shipments);
     }
 
     @Override
@@ -82,7 +83,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         List<ShipmentResponseDto> shipmentDtos = shipments
                 .getContent()
                 .stream()
-                .map(ShipmentMapper::entityToDto)
+                .map(shipmentMapper::entityToDto)
                 .toList();
 
         return new PageResponse<>(
@@ -128,7 +129,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         Shipment shipment = shipmentValidator.existsShipment(id);
 
-        return ShipmentMapper.entityToDto(shipment);
+        return shipmentMapper.entityToDto(shipment);
     }
 
     @Transactional
@@ -162,7 +163,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
         log.info("Shipment [{}] creado correctamente", shipment.getTrackingCode());
 
-        return ShipmentMapper.entityToDto(shipment);
+        return shipmentMapper.entityToDto(shipment);
     }
 
     // requestUpdate contiene los datos completos para update
@@ -206,7 +207,7 @@ public class ShipmentServiceImpl implements ShipmentService {
             throw e;
         }
 
-        return ShipmentMapper.entityToDto(shipment);
+        return shipmentMapper.entityToDto(shipment);
     }
 
     private String generateInternalCode() {
@@ -244,7 +245,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
 
         log.info("Envío [{}] entregado correctamente", id);
-        return ShipmentMapper.entityToDto(shipment);
+        return shipmentMapper.entityToDto(shipment);
     }
 
     @Transactional
@@ -258,14 +259,14 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
         log.info("Envío [{}] cancelado correctamente", id);
 
-        return ShipmentMapper.entityToDto(shipment);
+        return shipmentMapper.entityToDto(shipment);
     }
 
     // PERSONA
 
     private Person handlePersonCreateOrUpdate(ShipmentRequestDto shipmentDto, boolean isSender) {
-        PersonRequestDto personDto = isSender ? PersonMapper.shipmentDtoToPersonSenderDto(shipmentDto)
-                : PersonMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
+        PersonRequestDto personDto = isSender ? personMapper.shipmentDtoToPersonSenderDto(shipmentDto)
+                : personMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
 
         String ci = isSender ? shipmentDto.senderCI() : shipmentDto.recipientCI();
 
@@ -280,8 +281,8 @@ public class ShipmentServiceImpl implements ShipmentService {
             } else {
                 // Crear nueva persona
                 log.info("Creando nueva persona con CI: {}", ci);
-                personValidator.validatePerson(personDto);
-                Person newPerson = PersonMapper.dtoToEntity(personDto);
+                personValidator.validateForCreate(personDto);
+                Person newPerson = personMapper.dtoToEntity(personDto);
                 return personRepository.save(newPerson);
             }
         } catch (DataAccessException e) {
@@ -294,15 +295,17 @@ public class ShipmentServiceImpl implements ShipmentService {
             PersonRequestDto personDto,
             UUID personId) {
 
-        Person person = personValidator.validateUpdate(personDto, personId);
+        personValidator.validateForUpdate(personDto, personId);
 
-        if (!Objects.equals(person.getCi(), personDto.ci())) {
+        Person person = personValidator.getPersonByIdOrThrow(personId);
+
+        if (!person.getCi().equals(personDto.ci())) {
             person.setCi(personDto.ci());
         }
-        if (!Objects.equals(person.getName(), personDto.name())) {
+        if (!person.getName().equals(personDto.name())) {
             person.setName(personDto.name());
         }
-        if (!Objects.equals(person.getPhone(), personDto.phone())) {
+        if (!person.getPhone().equals(personDto.phone())) {
             person.setPhone(personDto.phone());
         }
 

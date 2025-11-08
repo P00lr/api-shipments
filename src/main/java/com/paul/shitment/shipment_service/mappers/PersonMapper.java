@@ -3,6 +3,8 @@ package com.paul.shitment.shipment_service.mappers;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Component;
+
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.dto.person.PersonResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
@@ -10,10 +12,11 @@ import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.models.entities.Person;
 
+@Component
 public class PersonMapper {
 
 
-    public static PersonResponseDto entityToDto(Person person) {
+    public PersonResponseDto entityToDto(Person person) {
         return new PersonResponseDto(
             person.getId(), 
             person.getName(), 
@@ -23,13 +26,13 @@ public class PersonMapper {
             person.isActive());
     }
 
-    public static List<PersonResponseDto> entitiesToDtos(List<Person> persons) {
+    public List<PersonResponseDto> entitiesToDtos(List<Person> persons) {
         return persons.stream()
-            .map(PersonMapper::entityToDto)
+            .map((person -> entityToDto(person)))
             .collect(Collectors.toList());
     }
 
-    public static Person dtoToEntity(PersonRequestDto personDto) {
+    public Person dtoToEntity(PersonRequestDto personDto) {
         return new Person(
             personDto.name().trim(),
             personDto.ci().trim(),
@@ -37,7 +40,7 @@ public class PersonMapper {
         );
     }
 
-    public static Person userDtoToEntityPerson(UserRequestDto userDto) {
+    public Person userDtoToEntityPerson(UserRequestDto userDto) {
         return new Person(
             userDto.name().trim(),
             userDto.ci().trim(),
@@ -45,7 +48,7 @@ public class PersonMapper {
         );
     }
 
-    public static PersonRequestDto shipmentDtoToPersonSenderDto(ShipmentRequestDto shipmentDto) {
+    public PersonRequestDto shipmentDtoToPersonSenderDto(ShipmentRequestDto shipmentDto) {
         return new PersonRequestDto(
             shipmentDto.senderName().trim(),
             shipmentDto.senderCI().trim(),
@@ -53,7 +56,7 @@ public class PersonMapper {
         );
     }
 
-    public static PersonRequestDto shipmentDtoToPersonRecipientDto(ShipmentRequestDto shipmentDto) {
+    public PersonRequestDto shipmentDtoToPersonRecipientDto(ShipmentRequestDto shipmentDto) {
         return new PersonRequestDto(
             shipmentDto.recipientName().trim(),
             shipmentDto.recipientCI().trim(),
@@ -62,7 +65,7 @@ public class PersonMapper {
     }
 
 
-    public static Person shipmentDtoToPerson(ShipmentRequestDto shipmentDto) {
+    public Person shipmentDtoToPerson(ShipmentRequestDto shipmentDto) {
         return new Person(
             shipmentDto.senderName().trim(),
             shipmentDto.senderCI().trim(),
@@ -70,7 +73,7 @@ public class PersonMapper {
         );
     }
 
-    public static Person shipmentDtoToPersonSender(ShipmentUpdateRequestDto shipmentDto) {
+    public Person shipmentDtoToPersonSender(ShipmentUpdateRequestDto shipmentDto) {
         return new Person(
             shipmentDto.senderName().trim(),
             shipmentDto.senderCI().trim(),
@@ -78,14 +81,14 @@ public class PersonMapper {
         );
     }
 
-    public static Person shipmentDtoToPersonRecipient(ShipmentRequestDto shipmentDto) {
+    public Person shipmentDtoToPersonRecipient(ShipmentRequestDto shipmentDto) {
         return new Person(
             shipmentDto.recipientName(),
             shipmentDto.recipientCI(),
             shipmentDto.recipientPhone()
         );
     }
-    public static Person shipmentDtoToPersonRecipient(ShipmentUpdateRequestDto shipmentDto) {
+    public Person shipmentDtoToPersonRecipient(ShipmentUpdateRequestDto shipmentDto) {
         return new Person(
             shipmentDto.recipientName(),
             shipmentDto.recipientCI(),
