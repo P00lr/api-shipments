@@ -142,7 +142,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         Office originOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.originOfficeId());
         Office destinationOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
-        AppUser user = userValidator.existsUser(shipmentDto.userId());
+        AppUser user = userValidator.getUserByIdOrTrhow(shipmentDto.userId());
 
         Person sender = handlePersonCreateOrUpdate(shipmentDto, true); // true para sender
         Person recipient = handlePersonCreateOrUpdate(shipmentDto, false); // false para recipient

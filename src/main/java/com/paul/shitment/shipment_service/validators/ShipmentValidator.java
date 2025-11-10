@@ -46,7 +46,7 @@ public class ShipmentValidator {
         officeValidation.getOfficeByIdOrThrow(shipmentDto.originOfficeId());
         officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
-        userValidator.existsUser(shipmentDto.userId());
+        userValidator.getUserByIdOrTrhow(shipmentDto.userId());
 
         validationPrice(shipmentDto.shippingCost());
         validationDescription(shipmentDto.itemDescription());

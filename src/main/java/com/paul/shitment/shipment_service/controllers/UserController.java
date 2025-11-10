@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
+import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
 import com.paul.shitment.shipment_service.services.UserService;
 
 import jakarta.validation.Valid;
@@ -42,7 +43,7 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUser(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUser(id));
+        return ResponseEntity.ok(userService.getUserByid(id));
     }
 
     @PostMapping
@@ -51,7 +52,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDto> updateUser(@PathVariable UUID id, @Valid @RequestBody UserRequestDto userDto) {
+    public ResponseEntity<UserResponseDto> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequestDto userDto) {
         return ResponseEntity.ok(userService.updateUser(id, userDto));
     }
 

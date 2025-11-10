@@ -77,11 +77,11 @@ public class PersonValidator {
     public void phoneUnique(String phone) {
 
         if (phone == null)
-            throw new PersonValidationException("El celular es obligatorio");
+            throw new PersonValidationException("El telefono es obligatorio");
 
         if (phone != null && personRepository.existsByPhone(phone)) {
             log.warn("Intento de registrar phone duplicado: {}", phone);
-            throw new PersonValidationException("El número ya fue registrado");
+            throw new PersonValidationException("El telefono ya fue registrado");
         }
     }
 

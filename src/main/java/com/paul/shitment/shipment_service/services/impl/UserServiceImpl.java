@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
+import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
 import com.paul.shitment.shipment_service.mappers.PersonMapper;
 import com.paul.shitment.shipment_service.mappers.UserMapper;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
@@ -33,6 +34,8 @@ public class UserServiceImpl implements UserService {
     private final PersonRepository personRepository;
     private final PersonMapper personMapper;
 
+    private final UserMapper userMapper;
+
     private final UserRepository userRepository;
     private final UserValidator userValidator;
 
@@ -40,15 +43,12 @@ public class UserServiceImpl implements UserService {
     public List<UserResponseDto> getAllUsers() {
 
         log.info("verificando existencia de registros");
-        return UserMapper.entitiesToDto(userRepository.findAll());
+        return userMapper.entitiesToDto(userRepository.findAll());
 
     }
 
     @Override
     public PageResponse<UserResponseDto> getAllUsersPaged(int pageNo, int size, String sortBy) {
-        log.info("Verificando existencia de registros {}", userRepository.count());
-        userValidator.existsUsers();
-
         // Ordenamiento por el campo sortBy, por defecto ASC
         Sort sort = Sort.by(sortBy);
 
@@ -61,7 +61,7 @@ public class UserServiceImpl implements UserService {
         // Convertir cada User a UserResponseDto
         List<UserResponseDto> dtoList = new ArrayList<>();
         for (AppUser user : userPage.getContent()) {
-            dtoList.add(UserMapper.entityToDto(user));
+            dtoList.add(userMapper.entityToDto(user));
         }
 
         // Crear Page<UserResponseDto> con la misma info de paginación
@@ -76,79 +76,71 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto getUser(UUID id) {
+    public UserResponseDto getUserByid(UUID id) {
         log.info("Verificando existe al user con id: {}", id);
-        AppUser user = userValidator.existsUser(id);
-
-        return UserMapper.entityToDto(user);
+        AppUser user = userValidator.getUserByIdOrTrhow(id);
+        return userMapper.entityToDto(user);
     }
 
     @Override
+    @Transactional
     public UserResponseDto createUser(UserRequestDto userDto) {
-        log.info("Verificando que los datos sean correctos");
-        userValidator.validateCreateUser(userDto);
+        log.info("Verificando que los datos sean correctos {}", userDto);
+        userValidator.validateForCreate(userDto);
 
         Person person = personMapper.userDtoToEntityPerson(userDto);
         person.setRegistered(true);
+        personRepository.save(person);
 
-        try {
-            personRepository.save(person);
-            log.info("Se guardo correctamente la persona: {}", person);
-        } catch (DataAccessException e) {
-            log.error("Error al guardar a la persona {}", e);
-        }
+        AppUser user = userMapper.dtoToEntity(userDto, person);
+        String email = userDto.email().trim().toLowerCase();
+        user.setEmail(email);
+        userRepository.save(user);
 
-        AppUser user = UserMapper.dtoToEntity(userDto, person);
-
-        try {
-            userRepository.save(user);
-            log.info("Se guardo correctamente el user");
-        } catch (DataAccessException e) {
-            log.error("Error al guardar el usuario {}", user);
-            throw e;
-        }
-
-        return UserMapper.entityToDto(user);
+        return userMapper.entityToDto(user);
     }
 
     @Override
-    public UserResponseDto updateUser(UUID id, UserRequestDto userDto) {
-        log.info("Verificando datos entrandte {}", userDto);
-        AppUser user = userValidator.validiateUserUpdate(id, userDto);
+    public UserResponseDto updateUser(UUID id, UserUpdateRequestDto userDto) {
+        log.info("Verificando datos entrante {}", userDto);
+        userValidator.validateUserForUpdate(id, userDto);
+        AppUser user = userValidator.getUserByIdOrTrhow(id);
 
-        user.setUsername(userDto.username());
-        user.setPassword(userDto.password());
-        user.setEmail(userDto.email());
+        updateUserAttributes(userDto, user);
+        userRepository.save(user);
 
-        try {
-            userRepository.save(user);
-            log.info("Se guardo correctamente el user: {}", user);
-        } catch (DataAccessException e) {
-            log.error("Eror al registrar en la db {}", e);
-            throw e;
-        }
-
-        return UserMapper.entityToDto(user);
+        return userMapper.entityToDto(user);
     }
 
     @Override
     public UserResponseDto dactivateUser(UUID id) {
         log.info("Verificando el registro con id: {}", id);
-        AppUser user = userValidator.existsUser(id);
+        AppUser user = userValidator.getUserByIdOrTrhow(id);
 
         if (user.isActive() == true) {
             user.setActive(false);
-        }
-
-        try {
             userRepository.save(user);
-        } catch (DataAccessException e) {
-            log.error("Error al guardar el user desactivado {}", e);
-            throw e;
         }
-        ;
 
-        return UserMapper.entityToDto(user);
+        return userMapper.entityToDto(user);
+    }
+
+    private void updateUserAttributes(UserUpdateRequestDto userDto, AppUser user) {
+
+        if (!userDto.name().equals(user.getPerson().getName()))
+            user.getPerson().setName(userDto.name().trim());
+
+        if (!userDto.phone().equals(user.getPerson().getPhone()))
+            user.getPerson().setPhone(userDto.phone().trim());
+
+        if (!userDto.ci().equals(user.getPerson().getCi()))
+            user.getPerson().setCi(userDto.ci().trim());
+
+        if (!userDto.username().equals(user.getUsername()))
+            user.setUsername(userDto.username().trim());
+
+        if (!userDto.email().equals(user.getEmail()))
+            user.setEmail(userDto.email().trim().toLowerCase());
     }
 
 }

@@ -4,10 +4,16 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
+import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
+import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
 import com.paul.shitment.shipment_service.exceptions.validation.UserValidationException;
+import com.paul.shitment.shipment_service.mappers.UserMapper;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
+import com.paul.shitment.shipment_service.models.entities.Person;
+import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.UserRepository;
 
 import lombok.AllArgsConstructor;
@@ -19,40 +25,29 @@ import lombok.extern.slf4j.Slf4j;
 public class UserValidator {
 
     private final UserRepository userRepository;
-    private final PersonValidator personValidator;
+    private final  PersonValidator personValidator;
+    private final UserMapper userMapper;
+    private final PersonRepository personRepository;
 
 
-    public void existsUsers() {
-        if (userRepository.count() == 0) {
-            throw new ResourceNotFoundException("No se encontraron registros");
-        }
-    }
-
-    public AppUser existsUser(UUID id) {
+    public AppUser getUserByIdOrTrhow(UUID id) {
         return userRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("No se encontro al user con id: " + id));
     }
 
-    public void validateCreateUser(UserRequestDto userDto) {
-        notNull(userDto);
-
-        if (userDto.name() == null)
-            throw new UserValidationException("El nombre es obligatorio");
-
-        if (userDto.password() == null) 
-            throw new UserValidationException("El password es obligatorio");
-            
-            personValidator.ciUnique(userDto.ci());
-            personValidator.phoneUnique(userDto.phone());
-            usernameUnique(userDto.username());
-            
+    public void validateForCreate(UserRequestDto userDto) {
+        PersonRequestDto personRequest = userMapper.userRequestToPersonRequest(userDto);
+        personValidator.validateForCreate(personRequest);
 
         emailUnique(userDto.email());
+        usernameUnique(userDto.username());
     }   
 
-    public AppUser validiateUserUpdate(UUID id, UserRequestDto userDto) {
-        notNull(userDto);
-        AppUser user = existsUser(id);
+    public void validateUserForUpdate(UUID id, UserUpdateRequestDto userDto) {
+        AppUser user = getUserByIdOrTrhow(id);
+        Person person = user.getPerson();
+
+        validatePersonOfUserForUpdate(person.getId(), userDto);
 
         if(!userDto.username().equals(user.getUsername()) && userRepository.existsByUsername(userDto.username())) {
             throw new UserValidationException("El username ya esta registrado en la db");
@@ -60,33 +55,31 @@ public class UserValidator {
 
         if(!userDto.email().equals(user.getEmail()) && userRepository.existsByEmail(userDto.email()))
             throw new UserValidationException("El email ya esta registrado en la db");
-
-        return user;
     }
 
-    private void notNull(UserRequestDto userDto) {
-        if (userDto == null)
-            throw new UserValidationException("El objeto no puede ser null");
-    }
 
-    public void usernameUnique(String username) {
-        if (username == null) 
-            throw new UserValidationException("El username es obligatorio");
-        
+    public void usernameUnique(String username) {        
 
         if (userRepository.existsByUsername(username)) 
             throw new UserValidationException("El username ya esta en uso");
     }
 
     public void emailUnique(String email) {
-        if (email == null) {
-            throw new UserValidationException("El email es obligatorio");
-        }
-
         if (userRepository.existsByEmail(email)) 
             throw new UserValidationException("El email ya esta en uso");
     }
 
+    private void validatePersonOfUserForUpdate(UUID id, UserUpdateRequestDto userDto) {
+        Person person = personValidator.getPersonByIdOrThrow(id);
 
+        if (!person.getCi().equals(userDto.ci()) 
+                && personRepository.existsByCi(userDto.ci()))
+            throw new PersonValidationException("El CI ya esta registrado");
+
+        if (!person.getPhone().equals(userDto.phone())
+                && personRepository.existsByPhone(userDto.phone())) {
+            throw new PersonValidationException("El celular ya fue registrado");
+        }
+    }
 
 }

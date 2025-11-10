@@ -10,6 +10,7 @@ import com.paul.shitment.shipment_service.dto.person.PersonResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
+import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
 import com.paul.shitment.shipment_service.models.entities.Person;
 
 @Component
@@ -42,6 +43,14 @@ public class PersonMapper {
 
     public Person userDtoToEntityPerson(UserRequestDto userDto) {
         return new Person(
+            userDto.name().trim(),
+            userDto.ci().trim(),
+            userDto.phone()
+        );
+    }
+
+    public PersonRequestDto userDtoToEntityPerson(UserUpdateRequestDto userDto) {
+        return new PersonRequestDto(
             userDto.name().trim(),
             userDto.ci().trim(),
             userDto.phone()

@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.paul.shitment.shipment_service.dto.error.ErrorResponseDto;
+import com.paul.shitment.shipment_service.dto.ErrorResponseDto;
 import com.paul.shitment.shipment_service.exceptions.validation.OfficeValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;

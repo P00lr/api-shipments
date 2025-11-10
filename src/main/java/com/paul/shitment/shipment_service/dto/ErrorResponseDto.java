@@ -1,4 +1,4 @@
-package com.paul.shitment.shipment_service.dto.error;
+package com.paul.shitment.shipment_service.dto;
 
 import java.time.LocalDateTime;
 
