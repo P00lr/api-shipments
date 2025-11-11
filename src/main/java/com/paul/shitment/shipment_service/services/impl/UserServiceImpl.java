@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
+import com.paul.shitment.shipment_service.dto.user.UserPasswordUpdateDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
 import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
@@ -93,8 +94,12 @@ public class UserServiceImpl implements UserService {
         personRepository.save(person);
 
         AppUser user = userMapper.dtoToEntity(userDto, person);
-        String email = userDto.email().trim().toLowerCase();
+        String email = userDto.email().trim();
+        String password = user.getPassword().trim();
+
         user.setEmail(email);
+        user.setPassword(password);
+
         userRepository.save(user);
 
         return userMapper.entityToDto(user);
@@ -125,6 +130,17 @@ public class UserServiceImpl implements UserService {
         return userMapper.entityToDto(user);
     }
 
+    @Override
+    public UserResponseDto updateUserPassword(UUID id, UserPasswordUpdateDto passwordDto) {
+        AppUser user = userValidator.validateForUpdatePassword(id, passwordDto);
+
+        user.setPassword(passwordDto.newPassword());
+        userRepository.save(user);
+
+        return userMapper.entityToDto(user);
+    }
+
+    //METODOS AUXILIARES
     private void updateUserAttributes(UserUpdateRequestDto userDto, AppUser user) {
 
         if (!userDto.name().equals(user.getPerson().getName()))
@@ -140,7 +156,8 @@ public class UserServiceImpl implements UserService {
             user.setUsername(userDto.username().trim());
 
         if (!userDto.email().equals(user.getEmail()))
-            user.setEmail(userDto.email().trim().toLowerCase());
+            user.setEmail(userDto.email().trim());
     }
 
+    
 }

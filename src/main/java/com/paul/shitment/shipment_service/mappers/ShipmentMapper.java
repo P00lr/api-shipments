@@ -5,7 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
 import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.models.entities.Person;
@@ -74,4 +76,19 @@ public class ShipmentMapper {
                 status
             );
     }
+
+    public PersonRequestDto shipmentDtoToPersonSenderRequest(ShipmentUpdateRequestDto shipmentDto) {
+        return new PersonRequestDto(
+            shipmentDto.senderName(), 
+            shipmentDto.senderCI(), 
+            shipmentDto.senderPhone());
+    }
+
+    public PersonRequestDto shipmentDtoToPersonRecipientRequest(ShipmentUpdateRequestDto shipmentDto) {
+        return new PersonRequestDto(
+            shipmentDto.recipientName(), 
+            shipmentDto.recipientCI(), 
+            shipmentDto.recipientPhone());
+    }
+
 }

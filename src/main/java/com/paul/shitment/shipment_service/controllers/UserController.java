@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
+import com.paul.shitment.shipment_service.dto.user.UserPasswordUpdateDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
 import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
@@ -51,9 +52,16 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(userDto));
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/password/{id}")
     public ResponseEntity<UserResponseDto> updateUser(@PathVariable UUID id, @Valid @RequestBody UserUpdateRequestDto userDto) {
         return ResponseEntity.ok(userService.updateUser(id, userDto));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UserResponseDto> updatePassword(
+        @PathVariable UUID id, 
+        @Valid @RequestBody UserPasswordUpdateDto passwordDto) {
+            return ResponseEntity.ok(userService.updateUserPassword(id, passwordDto));
     }
 
     @DeleteMapping("/{id}")

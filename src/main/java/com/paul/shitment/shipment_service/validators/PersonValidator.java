@@ -62,6 +62,8 @@ public class PersonValidator {
         }
     }
 
+    
+
     // METODOS AUXILIARES
     public void ciUnique(String ci) {
 
