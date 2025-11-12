@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.services.impl;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -43,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ShipmentServiceImpl implements ShipmentService {
 
     private static final int MAX_RESULTS_CI_PHONE = 3;
+    private static final String ALLOWED_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     private final ShipmentRepository shipmentRepository;
     private final ShipmentValidator shipmentValidator;
@@ -186,28 +188,35 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     private String generateTrackingCode() {
-        String uuid = UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 8)
-                .toUpperCase();
-        String formatted = String.format("%s-%s",
-                uuid.substring(0, 4),
-                uuid.substring(4, 8));
-        return "TRF-" + formatted;
+        SecureRandom random = new SecureRandom();
+        String code;
+        final int totalCharacters = ALLOWED_CHARS.length();
+
+        do {
+            StringBuilder sb = new StringBuilder(6);
+            for (int i = 0; i < 5; i++) {
+                if (i == 2)
+                    sb.append('-');
+
+                int randomIndex = random.nextInt(totalCharacters);
+                char randomChar = ALLOWED_CHARS.charAt(randomIndex);
+                sb.append(randomChar);
+            }
+            code = sb.toString();
+        } while (shipmentRepository.existsByTrackingCode(code));
+
+        return code;
     }
 
     @Transactional
     @Override
-    public ShipmentResponseDto markAsDelivered(UUID id, String ci) {
+    public ShipmentResponseDto markAsDelivered(UUID id, String inputCI) {
         log.info("Marcando envío [{}] como entregado", id);
 
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(id);
-        String dbCI = shipment.getRecipient().getCi();
+        String recipientCI = shipment.getRecipient().getCi();
 
-        if (shipment.getShippingCost() >= 50) {
-            personValidator.validateCiMatch(dbCI, ci != null ? ci.trim() : null);
-        }
+        shipmentValidator.requiresIDByAmount(shipment.getShippingCost(), recipientCI, inputCI);
 
         shipment.deliver();
         shipmentRepository.save(shipment);
@@ -232,9 +241,8 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Transactional
     private Person handlePersonCreateOrUpdate(ShipmentRequestDto shipmentDto, boolean isSender) {
-        PersonRequestDto personDto = isSender ? 
-            personMapper.shipmentDtoToPersonSenderDto(shipmentDto): 
-            personMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
+        PersonRequestDto personDto = isSender ? personMapper.shipmentDtoToPersonSenderDto(shipmentDto)
+                : personMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
 
         String ci = isSender ? shipmentDto.senderCI() : shipmentDto.recipientCI();
 
@@ -281,8 +289,8 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     private void updateShipmentAttributes(
-        ShipmentUpdateRequestDto shipmentDto, 
-        Shipment shipment) {
+            ShipmentUpdateRequestDto shipmentDto,
+            Shipment shipment) {
 
         if (!shipmentDto.senderName().equals(shipment.getSender().getName()))
             shipment.getSender().setName(shipmentDto.senderName());
@@ -311,11 +319,11 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     private void validatePersonInShipment(ShipmentUpdateRequestDto shipmentDto, Shipment shipment) {
-        PersonRequestDto senderDto = shipmentMapper.shipmentDtoToPersonSenderRequest(shipmentDto);
+        PersonRequestDto senderDto = personMapper.shipmentDtoToPersonSenderRequest(shipmentDto);
         UUID senderId = shipment.getSender().getId();
         personValidator.validateForUpdate(senderDto, senderId);
 
-        PersonRequestDto recipientDto = shipmentMapper.shipmentDtoToPersonRecipientRequest(shipmentDto);
+        PersonRequestDto recipientDto = personMapper.shipmentDtoToPersonRecipientRequest(shipmentDto);
         UUID recipientId = shipment.getRecipient().getId();
         personValidator.validateForUpdate(recipientDto, recipientId);
     }

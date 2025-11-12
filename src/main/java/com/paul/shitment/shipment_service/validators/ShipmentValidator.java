@@ -16,46 +16,54 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-    @RequiredArgsConstructor
-    @Component
-    @Slf4j
-    public class ShipmentValidator {
-        private final ShipmentRepository shipmentRepository;
+@RequiredArgsConstructor
+@Component
+@Slf4j
+public class ShipmentValidator {
+    private final ShipmentRepository shipmentRepository;
 
-        private final OfficeValidator officeValidation;
-        
-        private final UserValidator userValidator;
+    private final OfficeValidator officeValidation;
 
+    private final UserValidator userValidator;
 
-        public Shipment getShipmentbyIdOrThrow(UUID id) {
-            return shipmentRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con id: " + id));
-        }
+    private final PersonValidator personValidator;
 
-        public void validateForCreate(ShipmentRequestDto shipmentDto) {
+    public Shipment getShipmentbyIdOrThrow(UUID id) {
+        return shipmentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con id: " + id));
+    }
 
-            officeValidation.validateOfficeExists(shipmentDto.originOfficeId());
-            officeValidation.validateOfficeExists(shipmentDto.destinationOfficeId());
+    public void validateForCreate(ShipmentRequestDto shipmentDto) {
 
-            userValidator.validateUserExists(shipmentDto.userId());
+        officeValidation.validateOfficeExists(shipmentDto.originOfficeId());
+        officeValidation.validateOfficeExists(shipmentDto.destinationOfficeId());
 
-        }
-
-        public Shipment validateForUpdate(UUID id, ShipmentUpdateRequestDto shipmentDto) {
-            
-            Shipment shipment = getShipmentbyIdOrThrow(id);
-
-            if (shipment.getStatus() != ShipmentStatus.REGISTERED)
-                throw new ShipmentValidationException("No es posible editar, el envio ya fue entregado");
-
-            return shipment;
-
-        }
-        public String validateTerm(String term) {
-            if (term == null || term.trim().isEmpty())
-                throw new ValidationException("Ingrese un palabra para buscar, ej: Nro CI, telefono, codigo de envio");
-
-            return term.trim();
-        }
+        userValidator.validateUserExists(shipmentDto.userId());
 
     }
+
+    public Shipment validateForUpdate(UUID id, ShipmentUpdateRequestDto shipmentDto) {
+
+        Shipment shipment = getShipmentbyIdOrThrow(id);
+
+        if (shipment.getStatus() != ShipmentStatus.REGISTERED)
+            throw new ShipmentValidationException("No es posible editar, el envio ya fue entregado");
+
+        return shipment;
+
+    }
+
+    public String validateTerm(String term) {
+        if (term == null || term.trim().isEmpty())
+            throw new ValidationException("Ingrese un palabra para buscar, ej: Nro CI, telefono, codigo de envio");
+
+        return term.trim();
+    }
+
+    public void requiresIDByAmount(Double price, String recipientCI,String  inputCI  ) {
+        if (price >= 50) {
+            personValidator.validateCiMatch(recipientCI, inputCI );
+        }
+    }
+
+}

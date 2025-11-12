@@ -16,6 +16,8 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
 
+    boolean existsByTrackingCode(String code);
+
     @Query("""
                 SELECT s
                 FROM Shipment s

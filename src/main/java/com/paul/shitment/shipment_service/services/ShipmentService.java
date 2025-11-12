@@ -18,6 +18,6 @@ public interface ShipmentService {
     ShipmentResponseDto updateShipment(UUID id, ShipmentUpdateRequestDto shipmentDto);
     ShipmentResponseDto canceledShipment(UUID id);
     List<ShipmentSuggestionDTO> getSuggestions(String term);
-    ShipmentResponseDto markAsDelivered(UUID id, String ci);
+    ShipmentResponseDto markAsDelivered(UUID id, String inputCI);
     
 }

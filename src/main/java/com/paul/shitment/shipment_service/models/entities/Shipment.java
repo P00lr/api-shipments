@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 
 import jakarta.persistence.Column;
@@ -115,7 +116,7 @@ public class Shipment {
 
     public void deliver() {
         if (this.status == ShipmentStatus.DELIVERED) {
-            throw new IllegalStateException("El envío ya fue entregado");
+            throw new ShipmentValidationException("El envío ya fue entregado");
         }
         this.status = ShipmentStatus.DELIVERED;
         this.deliveredAt = LocalDateTime.now();
@@ -123,10 +124,10 @@ public class Shipment {
 
     public void cancel() {
         if (this.status == ShipmentStatus.DELIVERED) {
-            throw new IllegalStateException("No se puede cancelar un envío entregado");
+            throw new ShipmentValidationException("No se puede cancelar un envío entregado");
         }
         if (this.status == ShipmentStatus.CANCELED) {
-            throw new IllegalStateException("El envío ya fue cancelado");
+            throw new ShipmentValidationException("El envío ya fue cancelado");
         }
         this.status = ShipmentStatus.CANCELED;
     }

@@ -16,93 +16,97 @@ import com.paul.shitment.shipment_service.models.entities.Person;
 @Component
 public class PersonMapper {
 
-
     public PersonResponseDto entityToDto(Person person) {
         return new PersonResponseDto(
-            person.getId(), 
-            person.getName(), 
-            person.getCi() , 
-            person.getPhone() == null ? "Sin numero" : person.getPhone(), 
-            person.isRegistered(),
-            person.isActive());
+                person.getId(),
+                person.getName(),
+                person.getCi(),
+                person.getPhone() == null ? "Sin numero" : person.getPhone(),
+                person.isRegistered(),
+                person.isActive());
     }
 
     public List<PersonResponseDto> entitiesToDtos(List<Person> persons) {
         return persons.stream()
-            .map((person -> entityToDto(person)))
-            .collect(Collectors.toList());
+                .map((person -> entityToDto(person)))
+                .collect(Collectors.toList());
     }
 
     public Person dtoToEntity(PersonRequestDto personDto) {
         return new Person(
-            personDto.name().trim(),
-            personDto.ci().trim(),
-            personDto.phone()
-        );
+                personDto.name().trim(),
+                personDto.ci().trim(),
+                personDto.phone());
     }
 
     public Person userDtoToEntityPerson(UserRequestDto userDto) {
         return new Person(
-            userDto.name().trim(),
-            userDto.ci().trim(),
-            userDto.phone()
-        );
+                userDto.name().trim(),
+                userDto.ci().trim(),
+                userDto.phone());
     }
 
     public PersonRequestDto userDtoToEntityPerson(UserUpdateRequestDto userDto) {
         return new PersonRequestDto(
-            userDto.name().trim(),
-            userDto.ci().trim(),
-            userDto.phone()
-        );
+                userDto.name().trim(),
+                userDto.ci().trim(),
+                userDto.phone());
     }
 
     public PersonRequestDto shipmentDtoToPersonSenderDto(ShipmentRequestDto shipmentDto) {
         return new PersonRequestDto(
-            shipmentDto.senderName().trim(),
-            shipmentDto.senderCI().trim(),
-            shipmentDto.senderPhone()
-        );
+                shipmentDto.senderName().trim(),
+                shipmentDto.senderCI().trim(),
+                shipmentDto.senderPhone());
     }
 
     public PersonRequestDto shipmentDtoToPersonRecipientDto(ShipmentRequestDto shipmentDto) {
         return new PersonRequestDto(
-            shipmentDto.recipientName().trim(),
-            shipmentDto.recipientCI().trim(),
-            shipmentDto.recipientPhone()
-        );
+                shipmentDto.recipientName().trim(),
+                shipmentDto.recipientCI().trim(),
+                shipmentDto.recipientPhone());
     }
-
 
     public Person shipmentDtoToPerson(ShipmentRequestDto shipmentDto) {
         return new Person(
-            shipmentDto.senderName().trim(),
-            shipmentDto.senderCI().trim(),
-            shipmentDto.senderPhone()
-        );
+                shipmentDto.senderName().trim(),
+                shipmentDto.senderCI().trim(),
+                shipmentDto.senderPhone());
     }
 
     public Person shipmentDtoToPersonSender(ShipmentUpdateRequestDto shipmentDto) {
         return new Person(
-            shipmentDto.senderName().trim(),
-            shipmentDto.senderCI().trim(),
-            shipmentDto.senderPhone().trim()
-        );
+                shipmentDto.senderName().trim(),
+                shipmentDto.senderCI().trim(),
+                shipmentDto.senderPhone().trim());
     }
 
     public Person shipmentDtoToPersonRecipient(ShipmentRequestDto shipmentDto) {
         return new Person(
-            shipmentDto.recipientName(),
-            shipmentDto.recipientCI(),
-            shipmentDto.recipientPhone()
-        );
+                shipmentDto.recipientName(),
+                shipmentDto.recipientCI(),
+                shipmentDto.recipientPhone());
     }
+
     public Person shipmentDtoToPersonRecipient(ShipmentUpdateRequestDto shipmentDto) {
         return new Person(
-            shipmentDto.recipientName(),
-            shipmentDto.recipientCI(),
-            shipmentDto.recipientPhone()
-        );
+                shipmentDto.recipientName(),
+                shipmentDto.recipientCI(),
+                shipmentDto.recipientPhone());
+    }
+
+    public PersonRequestDto shipmentDtoToPersonSenderRequest(ShipmentUpdateRequestDto shipmentDto) {
+        return new PersonRequestDto(
+                shipmentDto.senderName(),
+                shipmentDto.senderCI(),
+                shipmentDto.senderPhone());
+    }
+
+    public PersonRequestDto shipmentDtoToPersonRecipientRequest(ShipmentUpdateRequestDto shipmentDto) {
+        return new PersonRequestDto(
+                shipmentDto.recipientName(),
+                shipmentDto.recipientCI(),
+                shipmentDto.recipientPhone());
     }
 
 }
