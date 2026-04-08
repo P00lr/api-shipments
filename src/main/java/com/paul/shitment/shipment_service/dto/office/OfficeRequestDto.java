@@ -6,14 +6,17 @@ import jakarta.validation.constraints.Pattern;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 
-@Schema(name = "OfficeRequestDto", description = "Datos necesarios para crear o actualizar una oficina")
+@Schema(
+    name = "OfficeRequestDto", 
+    description = "Datos necesarios para crear o actualizar una oficina")
 public record OfficeRequestDto(
 
         @Schema(
             description = "Nombre de la oficina",
             example = "Oficina Central",
-            required = true,
+            requiredMode = RequiredMode.REQUIRED,
             pattern = "[a-zA-Z0-9\\s,\\.áéíóúÁÉÍÓÚñÑ\\-]{4,60}"
         )
         @Pattern(
@@ -26,7 +29,7 @@ public record OfficeRequestDto(
         @Schema(
             description = "Dirección de la oficina",
             example = "Av. Siempre Viva 123",
-            required = false,
+            requiredMode = RequiredMode.REQUIRED,
             pattern = "[a-zA-Z0-9\\s,\\.áéíóúÁÉÍÓÚñÑ\\-#/]{4,60}"
         )
         @Pattern(
@@ -38,7 +41,7 @@ public record OfficeRequestDto(
         @Schema(
             description = "Número de celular de la oficina",
             example = "77712345678",
-            required = true,
+            requiredMode = RequiredMode.REQUIRED,
             pattern = "\\d{8,15}"
         )
         @Pattern(
@@ -46,12 +49,5 @@ public record OfficeRequestDto(
             message = "El numero de celular debe contener entre 8 y 15 dígitos"
         )
         @NotBlank(message = "El numero de celular es obligatorio")
-        String phone,
-
-        @Schema(
-            description = "Estado activo de la oficina",
-            example = "true",
-            required = true
-        )
-        boolean active
+        String phone
 ) { }

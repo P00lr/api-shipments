@@ -1,29 +1,52 @@
 package com.paul.shitment.shipment_service.dto.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+
 import java.util.UUID;
 
 @Schema(name = "UserResponseDto", description = "DTO que representa la información de un usuario")
 public record UserResponseDto(
 
-        @Schema(description = "Identificador único del usuario", example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", required = true)
+        @Schema(
+                description = "Identificador único del usuario", 
+                example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", 
+                requiredMode = RequiredMode.REQUIRED)
         UUID id,
 
-        @Schema(description = "Nombre completo del usuario", example = "Juan Pérez", required = true)
+        @Schema(
+                description = "Nombre completo del usuario", 
+                example = "Juan Pérez", 
+                requiredMode = RequiredMode.REQUIRED)
         String name,
 
-        @Schema(description = "Número de teléfono del usuario", example = "77712345678", required = false)
+        @Schema(
+                description = "Número de teléfono del usuario", 
+                example = "77712345678", 
+                requiredMode = RequiredMode.NOT_REQUIRED)
         String phone,
 
-        @Schema(description = "CI/DNI del usuario", example = "12345678", required = true)
+        @Schema(
+                description = "CI/DNI del usuario", 
+                example = "12345678", 
+                requiredMode = RequiredMode.REQUIRED)
         String ci,
 
-        @Schema(description = "Nombre de usuario (username)", example = "juanperez", required = true)
+        @Schema(
+                description = "Nombre de usuario (username)", 
+                example = "juanperez", 
+                requiredMode = RequiredMode.REQUIRED)
         String username,
 
-        @Schema(description = "Correo electrónico del usuario", example = "juan.perez@email.com", required = true)
+        @Schema(
+                description = "Correo electrónico del usuario", 
+                example = "juan.perez@email.com", 
+                requiredMode = RequiredMode.REQUIRED)
         String email,
 
-        @Schema(description = "Indica si el usuario está activo", example = "true", required = true)
+        @Schema(
+                description = "Indica si el usuario está activo", 
+                example = "true", 
+                requiredMode = RequiredMode.REQUIRED)
         boolean active
 ) { }

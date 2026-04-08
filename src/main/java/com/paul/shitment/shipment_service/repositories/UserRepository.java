@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.repositories;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,4 +13,5 @@ public interface UserRepository extends JpaRepository<AppUser, UUID>{
     boolean existsByUsername(String name);
     boolean existsByPassword(String password);
     boolean existsByEmail(String email);
+    Optional<AppUser> findByUsername(String username);
 }

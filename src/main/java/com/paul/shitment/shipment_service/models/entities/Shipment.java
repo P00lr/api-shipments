@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 
@@ -24,7 +25,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
+
+@Builder()
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -130,6 +132,33 @@ public class Shipment {
             throw new ShipmentValidationException("El envío ya fue cancelado");
         }
         this.status = ShipmentStatus.CANCELED;
+    }
+
+    public void updateFromShipmentUpdateRequestDto(ShipmentUpdateRequestDto shipmentDto) {
+        if (!shipmentDto.senderName().equals(this.getSender().getName()))
+            this.getSender().setName(shipmentDto.senderName());
+
+        if (!shipmentDto.senderCI().equals(this.getSender().getCi()) && !shipmentDto.senderCI().isEmpty())
+            this.getSender().setCi(shipmentDto.senderCI());
+
+        if (!shipmentDto.senderPhone().equals(this.getSender().getPhone()))
+            this.getSender().setPhone(shipmentDto.senderPhone());
+
+        if (!shipmentDto.recipientName().equals(this.getRecipient().getName()))
+            this.getRecipient().setName(shipmentDto.recipientName());
+
+        if (!shipmentDto.recipientCI().equals(this.getRecipient().getCi()) && !shipmentDto.recipientCI().isEmpty())
+            this.getRecipient().setCi(shipmentDto.recipientCI());
+
+        if (!shipmentDto.recipientPhone().equals(this.getRecipient().getPhone()))
+            this.getRecipient().setPhone(shipmentDto.recipientPhone());
+
+        if (!this.getItemDescription().equals(shipmentDto.itemDescription()))
+            this.setItemDescription(shipmentDto.itemDescription());
+
+        if (this.getShippingCost() != shipmentDto.shippingCost()) {
+            this.setShippingCost(shipmentDto.shippingCost());
+        }
     }
 
 }

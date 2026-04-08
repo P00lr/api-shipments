@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,7 +40,7 @@ public class CooperativeController {
     @ApiResponse(responseCode = "200", description = "Cooperativa de transporte encontrada")
     @ApiResponse(responseCode = "404", description = "Cooperativa de transporte no encontrada")
     public ResponseEntity<TransportCooperativeResponse> getCooperativeById(
-            @PathVariable UUID id) {
+            @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(transportCooperativeService.getCooperativeById(id));
     }
 
@@ -59,7 +60,7 @@ public class CooperativeController {
     @ApiResponse(responseCode = "200", description = "Cooperativa de transporte actualizada con éxito")
     @ApiResponse(responseCode = "404", description = "Cooperativa de transporte no encontrada")
     public ResponseEntity<TransportCooperativeResponse> updateCooperative(
-            @PathVariable UUID id,
+            @NonNull @PathVariable UUID id,
             @Valid @RequestBody TransportCooperativeRequest cooperativeDetails) {
         return ResponseEntity.ok(transportCooperativeService.updateCooperative(id, cooperativeDetails));
     }
@@ -68,7 +69,7 @@ public class CooperativeController {
     @Operation(summary = "Eliminar cooperativa de transporte")
     @ApiResponse(responseCode = "204", description = "Cooperativa de transporte eliminada con éxito")
     @ApiResponse(responseCode = "404", description = "Cooperativa de transporte no encontrada")
-    public ResponseEntity<Void> deleteCooperative(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteCooperative(@NonNull @PathVariable UUID id) {
         transportCooperativeService.deactivateCooperative(id);
         return ResponseEntity.noContent().build();
     }

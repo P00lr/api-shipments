@@ -1,18 +1,18 @@
 package com.paul.shitment.shipment_service.services.impl;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.mappers.OfficeMapper;
+import com.paul.shitment.shipment_service.mappers.PaginationMapper;
 import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.repositories.OfficeRepository;
 import com.paul.shitment.shipment_service.services.OfficeService;
@@ -29,66 +29,51 @@ public class OfficeServiceImpl implements OfficeService {
     private final OfficeValidator officeValidator;
     private final OfficeRepository officeRepository;
     private final OfficeMapper officeMapper;
+    private final PaginationMapper paginationMapper;
 
     @Override
-    public List<OfficeResponseDto> getAllOffices() {
+    public PageResponse<OfficeResponseDto> getAllOfficesPaged(@NonNull Pageable pageable) {
         log.info("Obteniendo todas las oficinas");
-        List<Office> offices = officeRepository.findAll();
-        return offices.stream()
-                .map(officeMapper::entityToDto)
-                .collect(Collectors.toList());
+        
+        Page<Office> officesPage = officeRepository.findAll(pageable);
+
+        return paginationMapper.toPageResponseDto(officesPage, officeMapper::toDto);
     }
 
     @Override
-    public PageResponse<OfficeResponseDto> getAllOfficesPaged(int pageNo, int size, String sortBy) {
-        log.info("Obteniendo oficinas paginadas: page {}, size {}, sort {}", pageNo, size, sortBy);
-        Page<Office> officePage = officeRepository.findAll(PageRequest.of(pageNo, size, Sort.by(sortBy)));
-
-        List<OfficeResponseDto> officeList = officePage.getContent()
-                .stream()
-                .map(officeMapper::entityToDto)
-                .collect(Collectors.toList());
-
-        return new PageResponse<>(
-                officeList,
-                officePage.getNumber(),
-                officePage.getSize(),
-                officePage.getTotalElements(),
-                officePage.getTotalPages(),
-                officePage.isFirst(),
-                officePage.isLast());
-    }
-
-    @Override
-    public OfficeResponseDto getOfficeById(UUID id) {
+    public OfficeResponseDto getOfficeById(@NonNull UUID id) {
         log.info("Obteniendo oficina con id: {}", id);
         Office office = officeValidator.getOfficeByIdOrThrow(id);
-        return officeMapper.entityToDto(office);
+        return officeMapper.toDto(office);
     }
 
     @Override
+    @Transactional
     public OfficeResponseDto createOffice(OfficeRequestDto dto) {
         officeValidator.validateForCreation(dto);
 
-        Office office = officeMapper.dtoToEntity(dto);
+        Office office = officeMapper.toEntity(dto);
+
         officeRepository.save(office);
-        return officeMapper.entityToDto(office);
+
+        return officeMapper.toDto(office);
     }
 
     @Override
-    public OfficeResponseDto updateOffice(UUID id, OfficeRequestDto dto) {
+    @Transactional
+    public OfficeResponseDto updateOffice(@NonNull UUID id, OfficeRequestDto dto) {
         officeValidator.validateForUpdate(id, dto);
 
         Office office = officeValidator.getOfficeByIdOrThrow(id);
-        officeMapper.updateEntity(office, dto);
+        office.updateFromRequestDto(dto);
 
         officeRepository.save(office);
-        
-        return officeMapper.entityToDto(office);
+
+        return officeMapper.toDto(office);
     }
 
     @Override
-    public OfficeResponseDto deactivateOfficeById(UUID id) {
+    public OfficeResponseDto deactivateOfficeById(@NonNull UUID id) {
         log.info("Desactivando oficina con id: {}", id);
         Office office = officeValidator.getOfficeByIdOrThrow(id);
 
@@ -98,6 +83,6 @@ public class OfficeServiceImpl implements OfficeService {
         officeRepository.save(office);
         log.info("Oficina desactivada correctamente: {}", office.getId());
 
-        return officeMapper.entityToDto(office);
+        return officeMapper.toDto(office);
     }
 }

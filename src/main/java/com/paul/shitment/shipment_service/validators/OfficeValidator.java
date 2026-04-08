@@ -2,6 +2,7 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 
@@ -18,12 +19,12 @@ public class OfficeValidator {
 
     private final OfficeRepository officeRepository;
 
-    public Office getOfficeByIdOrThrow(UUID id) {
+    public Office getOfficeByIdOrThrow(@NonNull UUID id) {
         return officeRepository.findById(id)
             .orElseThrow(() -> new ResourceAccessException("No se encontro la oficina con id: " + id));
     }
 
-    public void validateOfficeExists(UUID id) {
+    public void validateOfficeExists(@NonNull UUID id) {
         if (!officeRepository.existsById(id)) {
             throw new ResourceAccessException("No se encontro la oficina con id: " + id);
         }
@@ -34,7 +35,7 @@ public class OfficeValidator {
         validatePhoneUniqueness(officeDto.phone());
     }
 
-    public void validateForUpdate(UUID id, OfficeRequestDto officeDto) {
+    public void validateForUpdate(@NonNull UUID id, OfficeRequestDto officeDto) {
         Office existingOffice = getOfficeByIdOrThrow(id);
 
         validateNameUniquenessOnUpdate(existingOffice.getName(), officeDto.name());
@@ -68,7 +69,4 @@ public class OfficeValidator {
             throw new OfficeValidationException("Ya existe una oficina con el telefono: " + phoneNew);
         }
     }
-
-
-
 }

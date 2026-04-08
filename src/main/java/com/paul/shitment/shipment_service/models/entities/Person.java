@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,6 +29,7 @@ import lombok.NoArgsConstructor;
 public class Person {
 
     @Id
+    @NonNull
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -39,7 +43,7 @@ public class Person {
 
     private boolean registered;
 
-    private boolean active;
+    private boolean active = true;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "sender")
@@ -53,12 +57,20 @@ public class Person {
     @OneToOne(mappedBy = "person")
     private AppUser user;
 
+    public void deactivate() {
+        if(active == true)
+            active = false;
+    }
 
-    public Person(String name, String ci, String phone) {
-        this.name = name;
-        this.ci = ci;
-        this.phone = phone;
-        this.active = true;
+    public void updateFromRequestDto(PersonRequestDto personDto) {
+        if (!this.getName().equals(personDto.name()))
+            this.setName(personDto.name());
+
+        if (!this.getCi().equals(personDto.ci()))
+            this.setCi(personDto.ci());
+
+        if (!personDto.phone().equals(this.getPhone()))
+            this.setPhone(personDto.phone());
     }
 
 

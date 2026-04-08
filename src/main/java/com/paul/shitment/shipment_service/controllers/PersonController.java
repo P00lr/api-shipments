@@ -1,10 +1,11 @@
 package com.paul.shitment.shipment_service.controllers;
 
-import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,25 +37,16 @@ public class PersonController {
 
     private final PersonService personService;
 
-    @Operation(summary = "Obtener todas las personas")
-    @GetMapping
-    public ResponseEntity<List<PersonResponseDto>> getAllPersons() {
-        return ResponseEntity.ok(personService.getAllPersons());
-    }
-
     @Operation(summary = "Obtener personas paginadas")
-    @GetMapping("/paged")
-    public ResponseEntity<PageResponse<PersonResponseDto>> getAllPersonsPaged(
-            @Parameter(description = "Número de página (inicia en 0)") int pageNo,
-            @Parameter(description = "Cantidad de registros por página") int size,
-            @Parameter(description = "Campo por el cual ordenar") String sortBy) {
-        return ResponseEntity.ok(personService.getAllPersonsPaged(pageNo, size, sortBy));
+    @GetMapping
+    public ResponseEntity<PageResponse<PersonResponseDto>> getAllPersonsPaged(@NonNull Pageable pageable) {
+        return ResponseEntity.ok(personService.getAllPersonsPaged(pageable));
     }
 
     @Operation(summary = "Obtener persona por ID")
     @GetMapping("/{id}")
     public ResponseEntity<PersonResponseDto> getPerson(
-            @Parameter(description = "UUID de la persona") @PathVariable UUID id) {
+            @Parameter(description = "UUID de la persona")@NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(personService.getPersonById(id));
     }
 
@@ -84,14 +76,14 @@ public class PersonController {
     @PutMapping("/{id}")
     public ResponseEntity<PersonResponseDto> updatePerson(
             @Parameter(description = "Datos actualizados de la persona") @Valid @RequestBody PersonRequestDto personDto,
-            @Parameter(description = "UUID de la persona a actualizar") @PathVariable UUID id) {
+            @Parameter(description = "UUID de la persona a actualizar")@NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(personService.updatePerson(id, personDto));
     }
 
     @Operation(summary = "Desactivar persona (eliminación lógica)")
     @DeleteMapping("/{id}")
     public ResponseEntity<PersonResponseDto> deactivatePerson(
-            @Parameter(description = "UUID de la persona a desactivar") @PathVariable UUID id) {
+            @Parameter(description = "UUID de la persona a desactivar")@NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(personService.deletePerson(id));
     }
 }

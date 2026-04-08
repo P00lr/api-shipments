@@ -7,6 +7,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.lang.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,10 +20,14 @@ import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
 import com.paul.shitment.shipment_service.mappers.PersonMapper;
 import com.paul.shitment.shipment_service.mappers.UserMapper;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
+import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.models.entities.Person;
+import com.paul.shitment.shipment_service.models.entities.Role;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.UserRepository;
 import com.paul.shitment.shipment_service.services.UserService;
+import com.paul.shitment.shipment_service.validators.OfficeValidator;
+import com.paul.shitment.shipment_service.validators.RoleValidator;
 import com.paul.shitment.shipment_service.validators.UserValidator;
 
 import lombok.RequiredArgsConstructor;
@@ -32,13 +38,18 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private final PasswordEncoder passwordEncoder;
+
     private final PersonRepository personRepository;
     private final PersonMapper personMapper;
 
     private final UserMapper userMapper;
-
     private final UserRepository userRepository;
     private final UserValidator userValidator;
+
+    private final RoleValidator roleValidator;
+
+    private final OfficeValidator officeValidator;
 
     @Override
     public List<UserResponseDto> getAllUsers() {
@@ -73,11 +84,13 @@ public class UserServiceImpl implements UserService {
                 userPage.getTotalElements(),
                 userPage.getTotalPages(),
                 userPage.isFirst(),
-                userPage.isLast());
+                userPage.isLast(),
+                userPage.hasNext(),
+                userPage.hasPrevious());
     }
 
     @Override
-    public UserResponseDto getUserByid(UUID id) {
+    public UserResponseDto getUserByid(@NonNull UUID id) {
         log.info("Verificando existe al user con id: {}", id);
         AppUser user = userValidator.getUserByIdOrTrhow(id);
         return userMapper.entityToDto(user);
@@ -89,16 +102,25 @@ public class UserServiceImpl implements UserService {
         log.info("Verificando que los datos sean correctos {}", userDto);
         userValidator.validateForCreate(userDto);
 
+        Office office = officeValidator.getOfficeByIdOrThrow(userDto.officeId());
+
         Person person = personMapper.userDtoToEntityPerson(userDto);
         person.setRegistered(true);
         personRepository.save(person);
 
-        AppUser user = userMapper.dtoToEntity(userDto, person);
-        String email = userDto.email().trim();
-        String password = user.getPassword().trim();
+        AppUser user =  new AppUser();
 
-        user.setEmail(email);
-        user.setPassword(password);
+        user.setUsername(userDto.username().trim());
+        user.setPassword(passwordEncoder.encode(userDto.password().trim()));
+        user.setEmail(userDto.email().trim());
+        user.setPerson(person);
+        user.setOffice(office);
+
+        Role role = roleValidator.getRoleByNameOrThrow("ROLE_USER");
+        Role role2 = roleValidator.getRoleByNameOrThrow("ROLE_ADMIN");
+
+        user.getRoles().add(role);
+        user.getRoles().add(role2);
 
         userRepository.save(user);
 
@@ -106,19 +128,19 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUser(UUID id, UserUpdateRequestDto userDto) {
+    public UserResponseDto updateUser(@NonNull UUID id, UserUpdateRequestDto userDto) {
         log.info("Verificando datos entrante {}", userDto);
         userValidator.validateUserForUpdate(id, userDto);
         AppUser user = userValidator.getUserByIdOrTrhow(id);
 
-        updateUserAttributes(userDto, user);
+        user.updateFromRequestDto(userDto);
         userRepository.save(user);
 
         return userMapper.entityToDto(user);
     }
 
     @Override
-    public UserResponseDto dactivateUser(UUID id) {
+    public UserResponseDto dactivateUser(@NonNull UUID id) {
         log.info("Verificando el registro con id: {}", id);
         AppUser user = userValidator.getUserByIdOrTrhow(id);
 
@@ -131,7 +153,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponseDto updateUserPassword(UUID id, UserPasswordUpdateDto passwordDto) {
+    public UserResponseDto updateUserPassword(@NonNull UUID id, UserPasswordUpdateDto passwordDto) {
         AppUser user = userValidator.validateForUpdatePassword(id, passwordDto);
 
         user.setPassword(passwordDto.newPassword());
@@ -140,24 +162,4 @@ public class UserServiceImpl implements UserService {
         return userMapper.entityToDto(user);
     }
 
-    //METODOS AUXILIARES
-    private void updateUserAttributes(UserUpdateRequestDto userDto, AppUser user) {
-
-        if (!userDto.name().equals(user.getPerson().getName()))
-            user.getPerson().setName(userDto.name().trim());
-
-        if (!userDto.phone().equals(user.getPerson().getPhone()))
-            user.getPerson().setPhone(userDto.phone().trim());
-
-        if (!userDto.ci().equals(user.getPerson().getCi()))
-            user.getPerson().setCi(userDto.ci().trim());
-
-        if (!userDto.username().equals(user.getUsername()))
-            user.setUsername(userDto.username().trim());
-
-        if (!userDto.email().equals(user.getEmail()))
-            user.setEmail(userDto.email().trim());
-    }
-
-    
 }

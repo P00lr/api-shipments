@@ -3,7 +3,9 @@ package com.paul.shitment.shipment_service.controllers;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,26 +42,18 @@ public class ShipmentController {
 
     private final ShipmentService shipmentService;
 
-    @Operation(summary = "Obtener todos los envíos")
-    @GetMapping
-    public ResponseEntity<List<ShipmentResponseDto>> getAllShipments() {
-        return ResponseEntity.ok(shipmentService.getAllShipments());
-    }
-
     @Operation(summary = "Obtener envíos paginados")
-    @GetMapping("/paged")
-    public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(
-            @Parameter(description = "Número de página (inicia en 0)") @RequestParam(defaultValue = "0") int pageNo,
-            @Parameter(description = "Cantidad de registros por página") @RequestParam(defaultValue = "5") int pageSize) {
+    @GetMapping
+    public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(@NonNull Pageable pageable) {
 
-        PageResponse<ShipmentResponseDto> response = shipmentService.getAllShipmentsPaged(pageNo, pageSize);
+        PageResponse<ShipmentResponseDto> response = shipmentService.getAllShipmentsPaged(pageable);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Obtener un envío por ID")
     @GetMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> getShipment(
-            @Parameter(description = "UUID del envío") @PathVariable UUID id) {
+            @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(shipmentService.getShipment(id));
     }
 
@@ -73,7 +67,7 @@ public class ShipmentController {
     @Operation(summary = "Actualizar un envío existente")
     @PutMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> updateShipment(
-            @Parameter(description = "UUID del envío a actualizar") @PathVariable UUID id,
+            @Parameter(description = "UUID del envío a actualizar") @NonNull @PathVariable UUID id,
             @Parameter(description = "Datos actualizados del envío") @Valid @RequestBody ShipmentUpdateRequestDto shipmentDto) {
         return ResponseEntity.ok(shipmentService.updateShipment(id, shipmentDto));
     }
@@ -81,7 +75,7 @@ public class ShipmentController {
     @Operation(summary = "Cancelar un envío (eliminación lógica)")
     @DeleteMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> canceledShipment(
-            @Parameter(description = "UUID del envío a cancelar") @PathVariable UUID id) {
+            @Parameter(description = "UUID del envío a cancelar")@NonNull  @PathVariable UUID id) {
         return ResponseEntity.ok(shipmentService.canceledShipment(id));
     }
 
@@ -95,7 +89,7 @@ public class ShipmentController {
     @Operation(summary = "Marcar un envío como entregado")
     @PatchMapping("/{id}/deliver")
     public ResponseEntity<ShipmentResponseDto> markAsDelivered(
-            @Parameter(description = "UUID del envío") @PathVariable UUID id,
+            @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID id,
             @Parameter(description = "CI del destinatario (opcional)") @RequestBody(required = false) ShipmentDeliveryRequest request) {
 
         String ci = request != null ? request.ci() : null;

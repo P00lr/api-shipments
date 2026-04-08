@@ -17,16 +17,35 @@ public class Data {
     private final UserRepository userRepository;
 
     public void createData() {
-        Person personSender = new Person("Juana Lopez Sanches", "7834091", "12345678");
-        Person personRecipient = new Person("Paul Rodrigo Guasace Yovio", "8072061", "63414902");
+        Person personSender = new Person();
 
-        Office origginOffice = new Office("Satelite Cooperativa de transporte 15 de abril",
-                "B/Santos Dumont, C/Velasco, #123", "00000000");
+        personSender.setName("Juana Lopez Sanches");
+        personSender.setCi("7834091");
+        personSender.setPhone("12345678");
 
-        Office destinationOffice = new Office("Montero Cooperativa de transporte 15 de abril",
-                "B/San simon, C/Los Candas, #34", "11111111");
+        Person personRecipient = new Person();
+        personRecipient.setName("Paul Rodrigo Guasace Yovio");
+        personRecipient.setCi("8072061");
+        personRecipient.setPhone("63414902");
 
-        Person personUser = new Person("Pablo Escobar", "5678905", "78023456");
+        Office origginOffice = new Office();
+
+        origginOffice.setName("Satelite Cooperativa de transporte 15 de abril");
+        origginOffice.setAddress("B/Santos Dumont, C/Velasco, #123");
+        origginOffice.setPhone("00000000");
+
+        Office destinationOffice = new Office();
+
+        destinationOffice.setName("Montero Cooperativa de transporte 15 de abril");
+        destinationOffice.setAddress("B/San simon, C/Los Candas, #34");
+        destinationOffice.setPhone("11111111");
+
+
+        Person personUser = new Person();
+        personUser.setName("Pablo Escobar");
+        personUser.setCi("5678905");
+        personUser.setPhone("78023456");
+
         AppUser user1 = new AppUser("pablito", "root_1234", "pablito@gmail.com", personUser);
 
         personRepository.save(personSender);

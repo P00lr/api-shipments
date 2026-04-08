@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.paul.shitment.shipment_service.dto.ErrorResponseDto;
 import com.paul.shitment.shipment_service.exceptions.validation.OfficeValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.PersonValidationException;
+import com.paul.shitment.shipment_service.exceptions.validation.ResourceAlreadyExistsException;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
 import com.paul.shitment.shipment_service.exceptions.validation.ShipmentValidationException;
 import com.paul.shitment.shipment_service.exceptions.validation.TransportCooperativeException;
@@ -123,14 +124,29 @@ public class GlobalExceptionHandler {
             TransportCooperativeException ex, HttpServletRequest request) {
 
         ErrorResponseDto error = new ErrorResponseDto(
-            ex.getMessage(),
-            HttpStatus.BAD_REQUEST.name(),
-            LocalDateTime.now(),
-            HttpStatus.BAD_REQUEST.value(),
-            request.getRequestURI()
-    );
+                ex.getMessage(),
+                HttpStatus.BAD_REQUEST.name(),
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                request.getRequestURI());
 
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(ResourceAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponseDto> handlerResourceAlreadyExistsException(
+            ResourceAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                ex.getMessage(),
+                HttpStatus.CONFLICT.name(),
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+
     }
 
 }

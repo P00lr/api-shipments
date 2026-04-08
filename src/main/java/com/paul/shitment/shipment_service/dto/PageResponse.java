@@ -32,4 +32,8 @@ public class PageResponse<T> {
 
     @Schema(description = "Indica si esta es la última página", example = "false")
     private boolean last;
+
+    private boolean hasNext;
+
+    private boolean hasPrevious;
 }

@@ -2,6 +2,7 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import com.paul.shitment.shipment_service.dto.transportCooperative.TransportCooperativeRequest;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
@@ -17,7 +18,7 @@ public class TransportCooperativeValidator {
 
     private final TransportCooperativeRepository cooperativeRepository;
     
-    public TransportCooperative getCooperativeByIdOrThrow(UUID id) {
+    public TransportCooperative getCooperativeByIdOrThrow(@NonNull UUID id) {
         return cooperativeRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException(
                 String.format("No existe una cooperativa con el ID '%s'.", id)));
@@ -27,7 +28,7 @@ public class TransportCooperativeValidator {
         validateUniqueName(request);
     }
 
-    public void validateForUpdate(UUID id, TransportCooperativeRequest request) {
+    public void validateForUpdate(@NonNull UUID id, TransportCooperativeRequest request) {
         TransportCooperative existing = getCooperativeByIdOrThrow(id);
         validateNameUniquenessOnUpdate(existing.getName(), request.name());
     }

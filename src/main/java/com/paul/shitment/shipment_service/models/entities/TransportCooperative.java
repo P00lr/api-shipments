@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.paul.shitment.shipment_service.dto.transportCooperative.TransportCooperativeRequest;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -39,6 +41,10 @@ public class TransportCooperative {
     public TransportCooperative(String name, boolean isActive) {
         this.name = name;
         this.isActive = true;
+    }
+
+    public void updateFromShipmentUpdateRequestDto(TransportCooperativeRequest request) {
+        this.name = request.name();
     }
 
 }

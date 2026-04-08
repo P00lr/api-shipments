@@ -2,6 +2,7 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
@@ -30,13 +31,18 @@ public class UserValidator {
     private final UserMapper userMapper;
     private final PersonRepository personRepository;
 
-    public AppUser getUserByIdOrTrhow(UUID id) {
+    public AppUser getUserByIdOrTrhow(@NonNull UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontro al user con id: " + id));
     }
 
-    public void validateUserExists(UUID id) {
-        if(!userRepository.existsById(id))
+    public AppUser getUserByUsernameOrThrow(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro al user con id: " + username));
+    }
+
+    public void validateUserExists(@NonNull UUID id) {
+        if (!userRepository.existsById(id))
             throw new ResourceNotFoundException("No existe el user con id: " + id);
     }
 
@@ -49,8 +55,9 @@ public class UserValidator {
 
     }
 
-    public void validateUserForUpdate(UUID id, UserUpdateRequestDto userDto) {
+    public void validateUserForUpdate(@NonNull UUID id, UserUpdateRequestDto userDto) {
         AppUser user = getUserByIdOrTrhow(id);
+
         Person person = user.getPerson();
 
         validatePersonOfUserForUpdate(person.getId(), userDto);
@@ -74,7 +81,7 @@ public class UserValidator {
             throw new UserValidationException("El email ya esta en uso");
     }
 
-    public AppUser validateForUpdatePassword(UUID id, UserPasswordUpdateDto passwordDto) {
+    public AppUser validateForUpdatePassword(@NonNull UUID id, UserPasswordUpdateDto passwordDto) {
         AppUser user = getUserByIdOrTrhow(id);
         if (!passwordDto.oldPassword().trim().equals(user.getPassword()))
             throw new UserValidationException("La contraseña es incorrecta");
@@ -82,7 +89,7 @@ public class UserValidator {
         return user;
     }
 
-    private void validatePersonOfUserForUpdate(UUID id, UserUpdateRequestDto userDto) {
+    private void validatePersonOfUserForUpdate(@NonNull UUID id, UserUpdateRequestDto userDto) {
         Person person = personValidator.getPersonByIdOrThrow(id);
 
         if (!person.getCi().equals(userDto.ci())

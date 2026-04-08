@@ -11,7 +11,7 @@ import com.paul.shitment.shipment_service.models.entities.Shipment;
 @Component
 public class ShipmentMapper {
 
-    public ShipmentResponseDto entityToDto(Shipment shipment) {
+    public ShipmentResponseDto toShipmentResponseDto(Shipment shipment) {
         return new ShipmentResponseDto(
                 shipment.getId(),
 
@@ -39,9 +39,9 @@ public class ShipmentMapper {
                 shipment.getStatus());
     }
 
-    public List<ShipmentResponseDto> entitiesToDto(List<Shipment> shipments) {
+    public List<ShipmentResponseDto> toShipmentDtos(List<Shipment> shipments) {
         return shipments.stream()
-                .map((shipment) -> entityToDto(shipment))
+                .map((shipment) -> toShipmentResponseDto(shipment))
                 .collect(Collectors.toList());
     }
 

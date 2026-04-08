@@ -3,6 +3,7 @@ package com.paul.shitment.shipment_service.services.impl;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +34,7 @@ public class TransportCooperativeImpl implements TransportCooperativeService {
     }
 
     @Override
-    public TransportCooperativeResponse getCooperativeById(UUID id) {
+    public TransportCooperativeResponse getCooperativeById(@NonNull UUID id) {
         log.info("Obteniendo cooperativa con ID: {}", id);
         return cooperativeMapper.entityToDto(cooperativeValidator.getCooperativeByIdOrThrow(id));
     }
@@ -53,14 +54,14 @@ public class TransportCooperativeImpl implements TransportCooperativeService {
 
     @Override
     @Transactional
-    public TransportCooperativeResponse updateCooperative(UUID id, TransportCooperativeRequest request) {
+    public TransportCooperativeResponse updateCooperative(@NonNull UUID id, TransportCooperativeRequest request) {
         log.info("Actualizando cooperativa con ID: {}", id);
 
         TransportCooperative existing = cooperativeValidator.getCooperativeByIdOrThrow(id);
 
         cooperativeValidator.validateForUpdate(id, request);
 
-        cooperativeMapper.updateEntity(existing, request);
+        existing.updateFromShipmentUpdateRequestDto(request);
 
         cooperativeRepository.save(existing);
         log.info("Cooperativa actualizada con éxito: {}", id);
@@ -70,7 +71,7 @@ public class TransportCooperativeImpl implements TransportCooperativeService {
 
     @Override
     @Transactional
-    public TransportCooperativeResponse deactivateCooperative(UUID id) {
+    public TransportCooperativeResponse deactivateCooperative(@NonNull UUID id) {
         log.info("Desactivando cooperativa con ID: {}", id);
 
         TransportCooperative cooperative = cooperativeValidator.getCooperativeByIdOrThrow(id);

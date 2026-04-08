@@ -2,6 +2,7 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
@@ -24,25 +25,20 @@ public class ShipmentValidator {
 
     private final OfficeValidator officeValidation;
 
-    private final UserValidator userValidator;
 
     private final PersonValidator personValidator;
 
-    public Shipment getShipmentbyIdOrThrow(UUID id) {
+    public Shipment getShipmentbyIdOrThrow(@NonNull UUID id) {
         return shipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con id: " + id));
     }
 
     public void validateForCreate(ShipmentRequestDto shipmentDto) {
 
-        officeValidation.validateOfficeExists(shipmentDto.originOfficeId());
         officeValidation.validateOfficeExists(shipmentDto.destinationOfficeId());
-
-        userValidator.validateUserExists(shipmentDto.userId());
-
     }
 
-    public Shipment validateForUpdate(UUID id, ShipmentUpdateRequestDto shipmentDto) {
+    public Shipment validateForUpdate(@NonNull UUID id, ShipmentUpdateRequestDto shipmentDto) {
 
         Shipment shipment = getShipmentbyIdOrThrow(id);
 
@@ -60,9 +56,9 @@ public class ShipmentValidator {
         return term.trim();
     }
 
-    public void requiresIDByAmount(Double price, String recipientCI,String  inputCI  ) {
+    public void requiresIDByAmount(Double price, String recipientCI, String inputCI) {
         if (price >= 50) {
-            personValidator.validateCiMatch(recipientCI, inputCI );
+            personValidator.validateCiMatch(recipientCI, inputCI);
         }
     }
 

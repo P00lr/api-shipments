@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
+
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,10 +17,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,6 +30,7 @@ import lombok.NoArgsConstructor;
 public class Office {
 
     @Id
+    @NonNull
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -37,7 +43,7 @@ public class Office {
     @Column(unique = true)
     private String phone;
 
-    private boolean active;
+    private boolean active = true;
     
     @JsonManagedReference
     @OneToMany(mappedBy = "originOffice")
@@ -47,11 +53,9 @@ public class Office {
     @OneToMany(mappedBy = "destinationOffice")
     private List<Shipment> destinationShipments = new ArrayList<>();
 
-
-    public Office(String name, String address, String phone) {
-        this.name = name;
-        this.address = address;
-        this.phone = phone;
-        this.active = true;
+    public void updateFromRequestDto(OfficeRequestDto officeDto) {
+        this.setName(officeDto.name());
+        this.setAddress(officeDto.address());
+        this.setPhone(officeDto.phone());
     }
 }

@@ -11,6 +11,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.lang.NonNull;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,7 @@ import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
+import com.paul.shitment.shipment_service.mappers.PaginationMapper;
 import com.paul.shitment.shipment_service.mappers.PersonMapper;
 import com.paul.shitment.shipment_service.mappers.ShipmentMapper;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
@@ -57,41 +62,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final UserValidator userValidator;
     private final OfficeValidator officeValidation;
     private final JdbcTemplate jdbcTemplate;
+    private final PaginationMapper paginationMapper;
+
 
     @Override
-    public List<ShipmentResponseDto> getAllShipments() {
-        log.info("Buscando registros de shipments ordenados por fecha DESC");
-
-        List<Shipment> shipments = shipmentRepository.findAllOrdered();
-
-        return shipmentMapper.entitiesToDto(shipments);
-    }
-
-    @Override
-    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(int pageNo, int pageSize) {
+    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(@NonNull Pageable pageable) {
         log.info("Buscando registros de shipments paginados");
-
-        PageRequest pageRequest = PageRequest.of(pageNo, pageSize);
-        Page<Shipment> shipments = shipmentRepository.findAllOrdered(pageRequest);
-
-        if (shipments.isEmpty()) {
-            return new PageResponse<>(List.of(), 0, pageSize, 0L, 0, true, true);
-        }
-
-        List<ShipmentResponseDto> shipmentDtos = shipments
-                .getContent()
-                .stream()
-                .map(shipmentMapper::entityToDto)
-                .toList();
-
-        return new PageResponse<>(
-                shipmentDtos,
-                shipments.getNumber(),
-                shipments.getSize(),
-                shipments.getTotalElements(),
-                shipments.getTotalPages(),
-                shipments.isFirst(),
-                shipments.isLast());
+        Page<Shipment> shipmentsPaged = shipmentRepository.findAll(pageable);
+        return paginationMapper.toPageResponseDto(shipmentsPaged, shipmentMapper::toShipmentResponseDto);
     }
 
     @Override
@@ -120,12 +98,12 @@ public class ShipmentServiceImpl implements ShipmentService {
     }
 
     @Override
-    public ShipmentResponseDto getShipment(UUID id) {
+    public ShipmentResponseDto getShipment(@NonNull UUID id) {
         log.info("Verificando existencia de envio con id: {}", id);
 
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(id);
 
-        return shipmentMapper.entityToDto(shipment);
+        return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
     @Transactional
@@ -133,12 +111,19 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponseDto createShipment(ShipmentRequestDto shipmentDto) {
         log.info("Creando nuevo shipment...");
 
-        shipmentValidator.validateForCreate(shipmentDto);
 
-        Office originOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.originOfficeId());
         Office destinationOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
-        AppUser user = userValidator.getUserByIdOrTrhow(shipmentDto.userId());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        UserDetails userDetails = (UserDetails)auth.getPrincipal();
+
+        String username = userDetails.getUsername();
+        
+        AppUser user = userValidator.getUserByUsernameOrThrow(username);
+        UUID officeId = user.getOffice().getId();
+
+        Office originOffice = officeValidation.getOfficeByIdOrThrow(officeId);
+
 
         Person sender = handlePersonCreateOrUpdate(shipmentDto, true); // true para sender
         Person recipient = handlePersonCreateOrUpdate(shipmentDto, false); // false para recipient
@@ -159,12 +144,12 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
         log.info("Shipment [{}] creado correctamente", shipment.getTrackingCode());
 
-        return shipmentMapper.entityToDto(shipment);
+        return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
     @Transactional
     @Override
-    public ShipmentResponseDto updateShipment(UUID id, ShipmentUpdateRequestDto shipmentDto) {
+    public ShipmentResponseDto updateShipment(@NonNull UUID id, ShipmentUpdateRequestDto shipmentDto) {
         log.info("Verificando status REGISTERED para poder editar");
         Shipment shipment = shipmentValidator.validateForUpdate(id, shipmentDto);
 
@@ -172,12 +157,12 @@ public class ShipmentServiceImpl implements ShipmentService {
         validatePersonInShipment(shipmentDto, shipment);
 
         log.info("Actualizando registro");
-        updateShipmentAttributes(shipmentDto, shipment);
+        shipment.updateFromShipmentUpdateRequestDto(shipmentDto);
 
         shipmentRepository.save(shipment);
         log.info("Se actualizo correctamente el registro {}", shipmentDto);
 
-        return shipmentMapper.entityToDto(shipment);
+        return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
     private String generateInternalCode() {
@@ -210,7 +195,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Transactional
     @Override
-    public ShipmentResponseDto markAsDelivered(UUID id, String inputCI) {
+    public ShipmentResponseDto markAsDelivered(@NonNull UUID id, String inputCI) {
         log.info("Marcando envío [{}] como entregado", id);
 
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(id);
@@ -222,12 +207,12 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
 
         log.info("Envío [{}] entregado correctamente", id);
-        return shipmentMapper.entityToDto(shipment);
+        return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
     @Transactional
     @Override
-    public ShipmentResponseDto canceledShipment(UUID id) {
+    public ShipmentResponseDto canceledShipment(@NonNull UUID id) {
         log.info("Cancelando envío [{}]", id);
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(id);
 
@@ -236,7 +221,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         shipmentRepository.save(shipment);
         log.info("Envío [{}] cancelado correctamente", id);
 
-        return shipmentMapper.entityToDto(shipment);
+        return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
     @Transactional
@@ -244,7 +229,7 @@ public class ShipmentServiceImpl implements ShipmentService {
         PersonRequestDto personDto = isSender ? personMapper.shipmentDtoToPersonSenderDto(shipmentDto)
                 : personMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
 
-        String ci = isSender ? shipmentDto.senderCI() : shipmentDto.recipientCI();
+        String ci = isSender ? shipmentDto.sender().ci() : shipmentDto.recipient().ci();
 
         try {
             // Intentar encontrar la persona por CI
@@ -271,7 +256,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     private void updatePersonAttributes(
             PersonRequestDto personDto,
-            UUID personId) {
+            @NonNull UUID personId) {
 
         personValidator.validateForUpdate(personDto, personId);
 
@@ -285,36 +270,6 @@ public class ShipmentServiceImpl implements ShipmentService {
         }
         if (!person.getPhone().equals(personDto.phone())) {
             person.setPhone(personDto.phone());
-        }
-    }
-
-    private void updateShipmentAttributes(
-            ShipmentUpdateRequestDto shipmentDto,
-            Shipment shipment) {
-
-        if (!shipmentDto.senderName().equals(shipment.getSender().getName()))
-            shipment.getSender().setName(shipmentDto.senderName());
-
-        if (!shipmentDto.senderCI().equals(shipment.getSender().getCi()) && !shipmentDto.senderCI().isEmpty())
-            shipment.getSender().setCi(shipmentDto.senderCI());
-
-        if (!shipmentDto.senderPhone().equals(shipment.getSender().getPhone()))
-            shipment.getSender().setPhone(shipmentDto.senderPhone());
-
-        if (!shipmentDto.recipientName().equals(shipment.getRecipient().getName()))
-            shipment.getRecipient().setName(shipmentDto.recipientName());
-
-        if (!shipmentDto.recipientCI().equals(shipment.getRecipient().getCi()) && !shipmentDto.recipientCI().isEmpty())
-            shipment.getRecipient().setCi(shipmentDto.recipientCI());
-
-        if (!shipmentDto.recipientPhone().equals(shipment.getRecipient().getPhone()))
-            shipment.getRecipient().setPhone(shipmentDto.recipientPhone());
-
-        if (!shipment.getItemDescription().equals(shipmentDto.itemDescription()))
-            shipment.setItemDescription(shipmentDto.itemDescription());
-
-        if (shipment.getShippingCost() != shipmentDto.shippingCost()) {
-            shipment.setShippingCost(shipmentDto.shippingCost());
         }
     }
 

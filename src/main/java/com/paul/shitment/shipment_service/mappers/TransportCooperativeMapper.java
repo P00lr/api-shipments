@@ -6,6 +6,7 @@ import com.paul.shitment.shipment_service.models.entities.TransportCooperative;
 
 import java.util.List;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,21 +20,16 @@ public class TransportCooperativeMapper {
         );
     }
 
+    @NonNull
     public TransportCooperative dtoToEntity(TransportCooperativeRequest dto) {
-        return new TransportCooperative(
-            dto.name(),
-            dto.isActive()
-
-        );
+        TransportCooperative transportCooperative = new TransportCooperative();
+        transportCooperative.setName(dto.name());
+        return transportCooperative;
     }
 
     public List<TransportCooperativeResponse> entitiesToDtos(List<TransportCooperative> cooperatives) {
         return cooperatives.stream()
             .map(this::entityToDto)
             .toList();
-    }
-
-    public void updateEntity(TransportCooperative entity, TransportCooperativeRequest request) {
-        entity.setName(request.name());
     }
 }

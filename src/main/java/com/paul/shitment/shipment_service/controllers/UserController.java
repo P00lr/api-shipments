@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -55,7 +56,7 @@ public class UserController {
     @Operation(summary = "Obtener usuario por ID")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUser(
-            @Parameter(description = "UUID del usuario") @PathVariable UUID id) {
+            @Parameter(description = "UUID del usuario") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserByid(id));
     }
 
@@ -69,7 +70,7 @@ public class UserController {
     @Operation(summary = "Actualizar datos del usuario")
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUser(
-            @Parameter(description = "UUID del usuario a actualizar") @PathVariable UUID id,
+            @Parameter(description = "UUID del usuario a actualizar") @NonNull @PathVariable UUID id,
             @Parameter(description = "Datos actualizados del usuario") @Valid @RequestBody UserUpdateRequestDto userDto) {
         return ResponseEntity.ok(userService.updateUser(id, userDto));
     }
@@ -77,7 +78,7 @@ public class UserController {
     @Operation(summary = "Actualizar contraseña del usuario")
     @PutMapping("/password/{id}")
     public ResponseEntity<UserResponseDto> updatePassword(
-            @Parameter(description = "UUID del usuario") @PathVariable UUID id,
+            @Parameter(description = "UUID del usuario")@NonNull  @PathVariable UUID id,
             @Parameter(description = "Nueva contraseña") @Valid @RequestBody UserPasswordUpdateDto passwordDto) {
         return ResponseEntity.ok(userService.updateUserPassword(id, passwordDto));
     }
@@ -85,7 +86,7 @@ public class UserController {
     @Operation(summary = "Desactivar usuario (eliminación lógica)")
     @DeleteMapping("/{id}")
     public ResponseEntity<UserResponseDto> deactivate(
-            @Parameter(description = "UUID del usuario a desactivar") @PathVariable UUID id) {
+            @Parameter(description = "UUID del usuario a desactivar") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(userService.dactivateUser(id));
     }
 }

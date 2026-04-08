@@ -2,6 +2,7 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
@@ -21,7 +22,7 @@ public class PersonValidator {
 
     private final PersonRepository personRepository;
 
-    public Person getPersonByIdOrThrow(UUID id) {
+    public Person getPersonByIdOrThrow(@NonNull UUID id) {
         return personRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontro el registro con id: " + id));
     }
@@ -43,7 +44,7 @@ public class PersonValidator {
 
     }
 
-    public void validateForUpdate(PersonRequestDto personDto, UUID id) {
+    public void validateForUpdate(PersonRequestDto personDto, @NonNull UUID id) {
         Person person = getPersonByIdOrThrow(id);
 
         if (!person.getCi().equals(personDto.ci()) 

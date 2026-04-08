@@ -16,18 +16,18 @@ import lombok.Setter;
 @NoArgsConstructor
 public class ErrorResponseDto {
 
-    @Schema(description = "Tipo de error", example = "ValidationError", required = true)
+    @Schema(description = "Tipo de error", example = "ValidationError")
     private String error;
 
-    @Schema(description = "Mensaje detallado del error", example = "El nombre del usuario es obligatorio", required = true)
+    @Schema(description = "Mensaje detallado del error", example = "El nombre del usuario es obligatorio")
     private String message;
 
-    @Schema(description = "Fecha y hora en que ocurrió el error", example = "2025-11-12T14:30:00", required = true)
+    @Schema(description = "Fecha y hora en que ocurrió el error", example = "2025-11-12T14:30:00")
     private LocalDateTime date;
 
-    @Schema(description = "Código HTTP del error", example = "400", required = true)
+    @Schema(description = "Código HTTP del error", example = "400")
     private Integer code;
 
-    @Schema(description = "Ruta del endpoint donde ocurrió el error", example = "/api/v1/users", required = true)
+    @Schema(description = "Ruta del endpoint donde ocurrió el error", example = "/api/v1/users")
     private String path;
 }

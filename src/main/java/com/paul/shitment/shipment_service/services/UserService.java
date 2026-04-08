@@ -3,6 +3,8 @@ package com.paul.shitment.shipment_service.services;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.lang.NonNull;
+
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.user.UserPasswordUpdateDto;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
@@ -17,14 +19,14 @@ public interface UserService {
             int size,
             String sortBy);
 
-    UserResponseDto getUserByid(UUID id);
+    UserResponseDto getUserByid(@NonNull UUID id);
 
     UserResponseDto createUser(UserRequestDto userDto);
 
-    UserResponseDto updateUser(UUID id, UserUpdateRequestDto userDto);
+    UserResponseDto updateUser(@NonNull UUID id, UserUpdateRequestDto userDto);
 
-    UserResponseDto dactivateUser(UUID id);
+    UserResponseDto dactivateUser(@NonNull UUID id);
 
-    UserResponseDto updateUserPassword(UUID id, UserPasswordUpdateDto passwordDto);
+    UserResponseDto updateUserPassword(@NonNull UUID id, UserPasswordUpdateDto passwordDto);
 
 }
