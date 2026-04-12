@@ -8,6 +8,7 @@ import org.springframework.web.client.ResourceAccessException;
 
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 import com.paul.shitment.shipment_service.exceptions.validation.OfficeValidationException;
+import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
 import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.repositories.OfficeRepository;
 
@@ -21,12 +22,12 @@ public class OfficeValidator {
 
     public Office getOfficeByIdOrThrow(@NonNull UUID id) {
         return officeRepository.findById(id)
-            .orElseThrow(() -> new ResourceAccessException("No se encontro la oficina con id: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("No se encontro la oficina con id: " + id));
     }
 
     public void validateOfficeExists(@NonNull UUID id) {
         if (!officeRepository.existsById(id)) {
-            throw new ResourceAccessException("No se encontro la oficina con id: " + id);
+            throw new ResourceNotFoundException("No se encontro la oficina con id: " + id);
         }
     }
 
