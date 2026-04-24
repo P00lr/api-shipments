@@ -41,7 +41,8 @@ import lombok.Setter;
 public class Shipment {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue
+    @org.hibernate.annotations.UuidGenerator
     private UUID id;
 
     @Column(unique = true, nullable = false, length = 30)
@@ -112,7 +113,7 @@ public class Shipment {
     public void addParty(ShipmentParty party) {
         if (this.parties == null)
             this.parties = new HashSet<>();
-        
+
         this.parties.add(party);
         party.setShipment(this);
     }
