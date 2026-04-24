@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.ResourceAccessException;
 
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 import com.paul.shitment.shipment_service.exceptions.validation.OfficeValidationException;

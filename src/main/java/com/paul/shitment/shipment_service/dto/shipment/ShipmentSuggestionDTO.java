@@ -1,5 +1,7 @@
 package com.paul.shitment.shipment_service.dto.shipment;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
@@ -32,19 +34,19 @@ public record ShipmentSuggestionDTO(
                 description = "Nombre completo del destinatario", 
                 example = "María López", 
                 requiredMode = RequiredMode.REQUIRED)
-        String recipientName,
+        String fullName,
 
         @Schema(
                 description = "CI/DNI del destinatario", 
                 example = "87654321", 
                 requiredMode = RequiredMode.REQUIRED)
-        String recipientCi,
+        String documentNumber,
 
         @Schema(
                 description = "Número de teléfono del destinatario", 
                 example = "77787654321", 
                 requiredMode = RequiredMode.NOT_REQUIRED)
-        String recipientPhone,
+        String phone,
 
         @Schema(
                 description = "Estado actual del envío", 
@@ -56,5 +58,7 @@ public record ShipmentSuggestionDTO(
                 description = "Costo del envío", 
                 example = "50.0", 
                 requiredMode = RequiredMode.REQUIRED)
-        Double shippingCost
+        BigDecimal shippingCost,
+
+        LocalDateTime createdAt
 ) { }

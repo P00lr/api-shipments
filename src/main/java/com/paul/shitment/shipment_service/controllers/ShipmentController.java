@@ -64,13 +64,13 @@ public class ShipmentController {
         return ResponseEntity.ok(shipmentService.createShipment(shipmentDto));
     }
 
-    @Operation(summary = "Actualizar un envío existente")
+    /* @Operation(summary = "Actualizar un envío existente")
     @PutMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> updateShipment(
             @Parameter(description = "UUID del envío a actualizar") @NonNull @PathVariable UUID id,
             @Parameter(description = "Datos actualizados del envío") @Valid @RequestBody ShipmentUpdateRequestDto shipmentDto) {
         return ResponseEntity.ok(shipmentService.updateShipment(id, shipmentDto));
-    }
+    } */
 
     @Operation(summary = "Cancelar un envío (eliminación lógica)")
     @DeleteMapping("/{id}")
@@ -81,19 +81,20 @@ public class ShipmentController {
 
     @Operation(summary = "Sugerencias de envíos por término")
     @GetMapping("/suggestions")
-    public List<ShipmentSuggestionDTO> getSuggestions(
-            @Parameter(description = "Término de búsqueda") @RequestParam(name = "term", defaultValue = "") String term) {
-        return shipmentService.getSuggestions(term);
+    public ResponseEntity<PageResponse<ShipmentSuggestionDTO>> getSuggestions(
+            @Parameter(description = "Término de búsqueda") @RequestParam(name = "term", defaultValue = "") String term,
+            @Parameter(description = "Configuración de paginación") Pageable pageable) {
+        PageResponse<ShipmentSuggestionDTO> response = shipmentService.getSuggestions(term, pageable);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Marcar un envío como entregado")
-    @PatchMapping("/{id}/deliver")
+    @PatchMapping("/{shipmentUUID}/deliver")
     public ResponseEntity<ShipmentResponseDto> markAsDelivered(
-            @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID id,
-            @Parameter(description = "CI del destinatario (opcional)") @RequestBody(required = false) ShipmentDeliveryRequest request) {
+            @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID shipmentUUID,
+            @Parameter(description = "Numero de documento del destinatario (opcional)") @RequestBody ShipmentDeliveryRequest request) {
 
-        String ci = request != null ? request.ci() : null;
-        return ResponseEntity.ok(shipmentService.markAsDelivered(id, ci));
+        return ResponseEntity.ok(shipmentService.markAsDelivered(shipmentUUID, request));
     }
 }
 

@@ -48,9 +48,9 @@ public class PersonServiceImpl implements PersonService {
     }
 
     @Override
-    public PersonResponseDto getPersonByCI(String ci) {
-        log.info("Verificando si existe la persona por ci: {}", ci);
-        return personMapper.toDto(personValidator.getPersonByCiOrThrow(ci));
+    public PersonResponseDto getPersonByCI(String documentNumber) {
+        log.info("Verificando si existe la persona por ci: {}", documentNumber);
+        return personMapper.toDto(personValidator.getPersonByCiOrThrow(documentNumber));
     }
 
     @Override

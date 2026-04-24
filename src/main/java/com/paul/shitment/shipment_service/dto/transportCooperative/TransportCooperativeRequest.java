@@ -3,6 +3,7 @@ package com.paul.shitment.shipment_service.dto.transportCooperative;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 
@@ -18,5 +19,9 @@ public record TransportCooperativeRequest(
                 min = 3, 
                 max = 100, 
                 message = "El nombre debe tener entre 3 y 100 caracteres.")
-        String name
+        String name,
+
+
+        @NotNull(message = "El campo habilidado es obligatorio")
+        boolean enabled
 ) { }

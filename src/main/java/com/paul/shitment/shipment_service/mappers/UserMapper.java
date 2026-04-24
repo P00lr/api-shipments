@@ -17,16 +17,18 @@ public class UserMapper {
     public UserResponseDto entityToDto(AppUser user) {
         return new UserResponseDto(
             user.getId(), 
-            user.getPerson().getName(),
+            user.getPerson().getDocumentType().name(),
+            user.getPerson().getDocumentNumber(),
+            user.getPerson().getFullName(),
             user.getPerson().getPhone(),
-            user.getPerson().getCi(),
             user.getUsername(), 
             user.getEmail(), 
+            user.getOffice().getName(),
             user.isActive());
     }
 
     public List<UserResponseDto> entitiesToDto(List<AppUser> users) {
-        List<UserResponseDto> listUsers = new ArrayList<UserResponseDto>();
+        List<UserResponseDto> listUsers = new ArrayList<>();
 
         for (int i = 0; i < users.size(); i++) {
             AppUser user = users.get(i);
@@ -48,8 +50,9 @@ public class UserMapper {
 
     public PersonRequestDto userRequestToPersonRequest(UserRequestDto userDto) {
         return new PersonRequestDto(
-            userDto.name(),
-            userDto.ci(), 
-            userDto.phone());
+            userDto.person().documentType(),
+            userDto.person().documentNumber(), 
+            userDto.person().fullName(),
+            userDto.person().phone());
     }
 }

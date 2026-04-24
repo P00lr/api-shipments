@@ -2,8 +2,11 @@ package com.paul.shitment.shipment_service.dto.user;
 
 import java.util.UUID;
 
+import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,33 +15,8 @@ import jakarta.validation.constraints.Pattern;
 @Schema(name = "UserRequestDto", description = "DTO para la creación de un nuevo usuario")
 public record UserRequestDto(
 
-        @Schema(
-                description = "Nombre completo del usuario", 
-                example = "Juan Pérez", 
-                requiredMode = RequiredMode.REQUIRED)
-        @NotBlank(message = "El nombre es obligatorio")
-        String name,
-
-        @Schema(
-                description = "CI/DNI del usuario", 
-                example = "12345678", 
-                requiredMode = RequiredMode.REQUIRED, 
-                pattern = "\\d{7,10}")
-        @NotBlank(message = "El CI es obligatorio")
-        @Pattern(
-                regexp = "\\d{7,10}", 
-                message = "El CI debe contener entre 6 y 10 dígitos numéricos")
-        String ci,
-
-        @Schema(
-                description = "Número de teléfono del usuario", 
-                example = "77712345678", 
-                requiredMode = RequiredMode.NOT_REQUIRED, 
-                pattern = "\\d{8,15}")
-        @Pattern(
-                regexp = "\\d{8,15}", 
-                message = "El teléfono debe contener entre 8 y 15 dígitos numéricos")
-        String phone,
+        @Valid
+        PersonRequestDto person,
 
         @Schema(
                 description = "Nombre de usuario (username)", 

@@ -1,7 +1,10 @@
 package com.paul.shitment.shipment_service.dto.person;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+
+import com.paul.shitment.shipment_service.models.enums.DocumentType;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
@@ -10,20 +13,28 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 public record PersonRequestDto(
 
         @Schema(
+            description = "Tipo de  documento de la persona", 
+            example = " CI, NIT, PASSPORT", 
+            requiredMode = RequiredMode.REQUIRED)
+        @NotNull(message = "El campo tipo de documento es obligatorio")
+        DocumentType documentType,
+
+        @Schema(
+            description = "Número de documento de la persona", 
+            example = "1234567", 
+            requiredMode = RequiredMode.REQUIRED, 
+            pattern = "\\d{7,9}")
+        @NotBlank(message = "El numero de documento es obligatorio")
+        @Pattern(regexp = "\\d{7,9}", message = "El numero de documento debe contener exactamente entre 7 y 9 dígitos numéricos")
+        String documentNumber,
+
+        @Schema(
             description = "Nombre completo de la persona", 
             example = "Juan Pérez", 
             requiredMode = RequiredMode.REQUIRED)
         @NotBlank(message = "El nombre es obligatorio")
-        String name,
+        String fullName,
 
-        @Schema(
-            description = "Número de CI/DNI de la persona", 
-            example = "12345678", 
-            requiredMode = RequiredMode.REQUIRED, 
-            pattern = "\\d{7,9}")
-        @NotBlank(message = "El DNI es obligatorio")
-        @Pattern(regexp = "\\d{7,9}", message = "El DNI debe contener exactamente entre 7 y 9 dígitos numéricos")
-        String ci,
 
         @Schema(
             description = "Número de teléfono de la persona", 
@@ -36,12 +47,4 @@ public record PersonRequestDto(
         String phone
 ) {
 
-    @Override
-    public String toString() {
-        return "PersonRequestDto {" +
-                "Nombre='" + name + '\'' +
-                ", CI='" + ci + '\'' +
-                ", Teléfono='" + phone + '\'' +
-                '}';
-    }
 }

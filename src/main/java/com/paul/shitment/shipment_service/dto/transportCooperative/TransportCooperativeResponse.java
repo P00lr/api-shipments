@@ -24,5 +24,5 @@ public record TransportCooperativeResponse(
                 description = "Indica si la cooperativa está activa", 
                 example = "true", 
                 requiredMode = RequiredMode.REQUIRED)
-        boolean isActive
+        boolean enabled
 ) { }

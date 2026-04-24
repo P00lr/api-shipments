@@ -3,6 +3,7 @@ package com.paul.shitment.shipment_service.validators;
 import java.util.UUID;
 
 import org.springframework.lang.NonNull;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class UserValidator {
 
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final PersonValidator personValidator;
     private final UserMapper userMapper;
@@ -83,8 +85,9 @@ public class UserValidator {
 
     public AppUser validateForUpdatePassword(@NonNull UUID id, UserPasswordUpdateDto passwordDto) {
         AppUser user = getUserByIdOrTrhow(id);
-        if (!passwordDto.oldPassword().trim().equals(user.getPassword()))
-            throw new UserValidationException("La contraseña es incorrecta");
+
+        if (!passwordEncoder.matches(passwordDto.oldPassword().trim(), user.getPassword()))
+            throw new UserValidationException("La contraseña es completamente incorrecta");
 
         return user;
     }
@@ -92,12 +95,12 @@ public class UserValidator {
     private void validatePersonOfUserForUpdate(@NonNull UUID id, UserUpdateRequestDto userDto) {
         Person person = personValidator.getPersonByIdOrThrow(id);
 
-        if (!person.getCi().equals(userDto.ci())
-                && personRepository.existsByCi(userDto.ci()))
+        if (!person.getDocumentNumber().equals(userDto.person().documentNumber())
+                && personRepository.existsByDocumentNumber(userDto.person().documentNumber()))
             throw new PersonValidationException("El CI ya esta registrado");
 
-        if (!person.getPhone().equals(userDto.phone())
-                && personRepository.existsByPhone(userDto.phone())) {
+        if (!person.getPhone().equals(userDto.person().phone())
+                && personRepository.existsByPhone(userDto.person().phone())) {
             throw new PersonValidationException("El celular ya fue registrado");
         }
     }

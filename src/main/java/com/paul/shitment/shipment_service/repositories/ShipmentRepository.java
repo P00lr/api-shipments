@@ -42,16 +42,53 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
     List<Shipment> findAllOrdered();
 
     @Query("""
-                SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
-                    s.id, s.trackingCode, s.itemDescription, r.name, r.ci, r.phone, s.status, s.shippingCost)
+                SELECT DISTINCT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
+                    s.id,
+                    s.trackingCode,
+                    s.itemDescription,
+                    sp.fullName,
+                    sp.documentNumber,
+                    sp.phone,
+                    s.status,
+                    s.shippingCost,
+                    s.createdAt
+                )
                 FROM Shipment s
-                LEFT JOIN s.recipient r
-                WHERE (:term IS NULL OR LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%'))
-                    OR LOWER(r.ci) LIKE LOWER(CONCAT('%', :term, '%'))
-                    OR LOWER(r.phone) LIKE LOWER(CONCAT('%', :term, '%')))
+                JOIN s.parties sp
+                WHERE sp.role = com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole.RECIPIENT
+                    AND (
+                        :term IS NULL OR :term = '' OR
+                        LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%')) OR
+                        LOWER(sp.documentNumber) LIKE LOWER(CONCAT('%', :term, '%')) OR
+                        LOWER(sp.phone) LIKE LOWER(CONCAT('%', :term, '%'))
+                    )
                     AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
                 ORDER BY s.createdAt DESC
             """)
     List<ShipmentSuggestionDTO> searchByTerm(@Param("term") String term, Pageable pageable);
 
+    @Query("""
+                SELECT new com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO(
+                    s.id,
+                    s.trackingCode,
+                    s.itemDescription,
+                    sp.fullName,
+                    sp.documentNumber,
+                    sp.phone,
+                    s.status,
+                    s.shippingCost,
+                    s.createdAt
+                )
+                FROM Shipment s
+                JOIN s.parties sp
+                WHERE sp.role = com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole.RECIPIENT
+                    AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
+                    AND (
+                        LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%')) OR
+                        LOWER(sp.documentNumber) LIKE LOWER(CONCAT('%', :term, '%')) OR
+                        LOWER(sp.phone) LIKE LOWER(CONCAT('%', :term, '%'))
+                    )
+                ORDER BY s.createdAt DESC
+            """)
+    Page<ShipmentSuggestionDTO> searchByTermPaged(@Param("term") String term, Pageable pageable);
 }

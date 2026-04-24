@@ -18,6 +18,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import com.paul.shitment.shipment_service.exceptions.validation.JwtValidationException;
 import com.paul.shitment.shipment_service.security.exception.RestAuthenticationEntryPoint;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,16 +82,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // dejar pasar la request al siguiente filtro o endpoint
             filterChain.doFilter(request, response);
 
-        } catch (JwtValidationException ex) {
-            log.warn("JWT error de validación: {}", ex.getMessage());
-            SecurityContextHolder.clearContext();
-
-            // solo se dispara cuando hay token inválido
-            entryPoint.commence(
-                    request,
-                    response,
-                    new AuthenticationServiceException(ex.getMessage()));
+        } catch (ExpiredJwtException ex) {
+            handleException(request, response, "El token ha expirado");
+        } catch (JwtException | JwtValidationException ex) {
+            handleException(request, response, "Token inválido o mal formado");
+        } catch (Exception ex) {
+            handleException(request, response, "Error interno en la autenticación");
         }
+
+    }
+
+    // Método auxiliar
+    private void handleException(HttpServletRequest request, HttpServletResponse response, String message)
+            throws IOException, ServletException {
+        log.warn("JWT Auth Error: {}", message);
+        SecurityContextHolder.clearContext();
+        entryPoint.commence(request, response, new AuthenticationServiceException(message));
     }
 
     private String extractToken(HttpServletRequest request) {

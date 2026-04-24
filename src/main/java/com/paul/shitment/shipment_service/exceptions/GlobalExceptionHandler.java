@@ -149,4 +149,16 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception ex, HttpServletRequest request) {
+        log.error("Error no controlado: ", ex);
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.INTERNAL_SERVER_ERROR.name(),
+                "Ocurrió un error inesperado",
+                LocalDateTime.now(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                request.getRequestURI());
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
 }

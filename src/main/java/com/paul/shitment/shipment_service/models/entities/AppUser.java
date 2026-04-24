@@ -78,14 +78,14 @@ public class AppUser {
     }
 
     public void updateFromRequestDto(UserUpdateRequestDto userDto) {
-        if (!userDto.name().equals(this.getPerson().getName()))
-            this.getPerson().setName(userDto.name().trim());
+        if (!userDto.person().fullName().equals(this.getPerson().getFullName()))
+            this.getPerson().setFullName(userDto.person().fullName().trim());
 
-        if (!userDto.phone().equals(this.getPerson().getPhone()))
-            this.getPerson().setPhone(userDto.phone().trim());
+        if (!userDto.person().phone().equals(this.getPerson().getPhone()))
+            this.getPerson().setPhone(userDto.person().phone().trim());
 
-        if (!userDto.ci().equals(this.getPerson().getCi()))
-            this.getPerson().setCi(userDto.ci().trim());
+        if (!userDto.person().documentNumber().equals(this.getPerson().getDocumentNumber()))
+            this.getPerson().setDocumentNumber(userDto.person().documentNumber().trim());
 
         if (!userDto.username().equals(this.getUsername()))
             this.setUsername(userDto.username().trim());

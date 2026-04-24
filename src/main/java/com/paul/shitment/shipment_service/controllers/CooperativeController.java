@@ -35,6 +35,13 @@ public class CooperativeController {
         return ResponseEntity.ok(transportCooperativeService.getAllCooperatives());
     }
 
+    @GetMapping("/{cooperativeUUID}/whith-offices")
+    @Operation(summary = "Obtener la cooperativas de transporte con sus oficinas")
+    @ApiResponse(responseCode = "200", description = "La cooperativas de transporte recuperada con éxito")
+    public ResponseEntity<CooperativeWhithOfficesResponse> getCooperativeWhithOffices(@PathVariable UUID cooperativeUUID) {
+        return ResponseEntity.ok(transportCooperativeService.getCooperativeWhithOffices(cooperativeUUID));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "Obtener cooperativa de transporte por ID")
     @ApiResponse(responseCode = "200", description = "Cooperativa de transporte encontrada")
@@ -55,6 +62,11 @@ public class CooperativeController {
                 .body(transportCooperativeService.createCooperative(request));
     }
 
+    @PostMapping("/assignOffices")
+    public ResponseEntity<CooperativeOfficeResponse> assignOffices(@Valid @RequestBody CooperativeOfficeRequest cooperativeOfficeRequest) {
+        return ResponseEntity.ok(transportCooperativeService.assignOffices(cooperativeOfficeRequest));
+    }
+
     @PutMapping("/{id}")
     @Operation(summary = "Actualizar cooperativa de transporte")
     @ApiResponse(responseCode = "200", description = "Cooperativa de transporte actualizada con éxito")
@@ -69,8 +81,7 @@ public class CooperativeController {
     @Operation(summary = "Eliminar cooperativa de transporte")
     @ApiResponse(responseCode = "204", description = "Cooperativa de transporte eliminada con éxito")
     @ApiResponse(responseCode = "404", description = "Cooperativa de transporte no encontrada")
-    public ResponseEntity<Void> deleteCooperative(@NonNull @PathVariable UUID id) {
-        transportCooperativeService.deactivateCooperative(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<TransportCooperativeResponse> deleteCooperative(@NonNull @PathVariable UUID id) {
+        return ResponseEntity.ok(transportCooperativeService.deactivateCooperative(id));
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
@@ -47,9 +48,23 @@ public class UserController {
     @Operation(summary = "Obtener usuarios paginados")
     @GetMapping("/paged")
     public ResponseEntity<PageResponse<UserResponseDto>> getAllUsersPaged(
-            @Parameter(description = "Número de página (inicia en 0)") int pageNo,
-            @Parameter(description = "Cantidad de registros por página") int size,
-            @Parameter(description = "Campo por el cual ordenar") String sortBy) {
+            @RequestParam(defaultValue = "0")
+            @Parameter(description = "Número de página (inicia en 0)")
+            int pageNo,
+
+            @RequestParam(defaultValue = "10")
+            @Parameter(description = "Cantidad de registros por página")
+            int size,
+
+            @RequestParam(defaultValue = "id")
+            @Parameter(description = "Campo por el cual ordenar")
+            String sortBy) {
+
+        // Validaciones básicas (defensivo)
+        if (pageNo < 0) pageNo = 0;
+        if (size <= 0) size = 10;
+        if (size > 50) size = 50;
+
         return ResponseEntity.ok(userService.getAllUsersPaged(pageNo, size, sortBy));
     }
 

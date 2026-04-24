@@ -28,7 +28,7 @@ public class PersonValidator {
     }
 
     public Person getPersonByCiOrThrow(String ci) {
-        return personRepository.findByCi(ci)
+        return personRepository.findByDocumentNumber(ci)
                 .orElseThrow(() -> new PersonValidationException("No se encontra el registro con CI: " + ci));
     }
 
@@ -39,17 +39,16 @@ public class PersonValidator {
 
     public void validateForCreate(PersonRequestDto personDto) {
 
-        ciUnique(personDto.ci());
+        documentNumberUnique(personDto.documentNumber());
         phoneUnique(personDto.phone());
-
     }
 
     public void validateForUpdate(PersonRequestDto personDto, @NonNull UUID id) {
         Person person = getPersonByIdOrThrow(id);
 
-        if (!person.getCi().equals(personDto.ci()) 
-                && personRepository.existsByCi(personDto.ci()))
-            throw new PersonValidationException("El CI ya esta registrado");
+        if (!person.getDocumentNumber().equals(personDto.documentNumber()) 
+                && personRepository.existsByDocumentNumber(personDto.documentNumber()))
+            throw new PersonValidationException("El numero de documento ya esta registrado");
 
         if (!personDto.phone().equals(person.getPhone())
                 && personRepository.existsByPhone(personDto.phone())) {
@@ -57,23 +56,21 @@ public class PersonValidator {
         }
     }
 
-    public void validateCiMatch(String storedCi, String inputCi) {
+    public void validateDocumentNumberMatch(String storedCi, String inputCi) {
         if (inputCi == null || !storedCi.equals(inputCi)) {
-            throw new ShipmentValidationException("CI incorrecto para confirmar la entrega.");
+            throw new ShipmentValidationException("numero de documento incorrecto para confirmar la entrega.");
         }
     }
 
-    
-
     // METODOS AUXILIARES
-    public void ciUnique(String ci) {
+    public void documentNumberUnique(String documentNumber) {
 
-        if (ci == null)
-            throw new PersonValidationException("El CI es obligatorio");
+        if (documentNumber == null)
+            throw new PersonValidationException("El numero de documento es obligatorio");
 
-        if (personRepository.existsByCi(ci)) {
-            log.warn("Intento de registrar CI duplicado: {}", ci);
-            throw new PersonValidationException("El CI ya esta registrado");
+        if (personRepository.existsByDocumentNumber(documentNumber)) {
+            log.warn("Intento de registrar numero de documento duplicado: {}", documentNumber);
+            throw new PersonValidationException("El numero de documento ya esta registrado");
         }
     }
 

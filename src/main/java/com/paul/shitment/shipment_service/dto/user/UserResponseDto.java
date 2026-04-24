@@ -14,11 +14,20 @@ public record UserResponseDto(
                 requiredMode = RequiredMode.REQUIRED)
         UUID id,
 
+        String documentType,
+
+        @Schema(
+                description = "CI/DNI del usuario", 
+                example = "12345678", 
+                requiredMode = RequiredMode.REQUIRED)
+        String documentNumber,
+
+
         @Schema(
                 description = "Nombre completo del usuario", 
                 example = "Juan Pérez", 
                 requiredMode = RequiredMode.REQUIRED)
-        String name,
+        String fullName,
 
         @Schema(
                 description = "Número de teléfono del usuario", 
@@ -26,12 +35,7 @@ public record UserResponseDto(
                 requiredMode = RequiredMode.NOT_REQUIRED)
         String phone,
 
-        @Schema(
-                description = "CI/DNI del usuario", 
-                example = "12345678", 
-                requiredMode = RequiredMode.REQUIRED)
-        String ci,
-
+        
         @Schema(
                 description = "Nombre de usuario (username)", 
                 example = "juanperez", 
@@ -43,6 +47,8 @@ public record UserResponseDto(
                 example = "juan.perez@email.com", 
                 requiredMode = RequiredMode.REQUIRED)
         String email,
+
+        String officeName,
 
         @Schema(
                 description = "Indica si el usuario está activo", 

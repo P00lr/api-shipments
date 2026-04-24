@@ -7,8 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 public record ShipmentDeliveryRequest(
 
         @Schema(
-                description = "CI del destinatario del envío", 
+                description = "Numero de documento del destinatario del envío", 
                 example = "12345678", 
                 requiredMode = RequiredMode.REQUIRED)
-        String ci
+        String documentNumber
 ) { }

@@ -33,8 +33,6 @@ public class SecurityConfig {
         private final RestAuthenticationEntryPoint entryPoint;
         private final AccessDeniedHandler accessDeniedHandler;
 
-        
-
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
@@ -57,6 +55,7 @@ public class SecurityConfig {
 
                                                 // rutas públicas de autenticación (login, register, logout)
                                                 .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers("/error").permitAll()
 
                                                 // rutas públicas solo de lectura (cualquiera puede ver)
                                                 .requestMatchers(HttpMethod.GET,
@@ -66,11 +65,17 @@ public class SecurityConfig {
                                                 .requestMatchers(HttpMethod.GET,
                                                                 "/api/v1/transportCooperatives",
                                                                 "/api/v1/transportCooperatives/**",
+
                                                                 "/api/v1/offices", "/api/v1/offices/**",
+
                                                                 "/api/v1/persons", "/api/v1/persons/**",
+
                                                                 "/api/v1/users", "/api/v1/users",
+
                                                                 "/api/v1/permissions", "/api/v1/permissions/**",
+                                                                
                                                                 "/api/v1/roles", "/api/v1/roles/**")
+                                        
                                                 .hasRole("ADMIN") // solo ADMIN puede ver datos de
                                                                   // configuración/usuarios/roles
 

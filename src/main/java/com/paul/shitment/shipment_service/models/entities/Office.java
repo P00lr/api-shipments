@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.springframework.lang.NonNull;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 
 import jakarta.persistence.Column;
@@ -37,7 +36,6 @@ public class Office {
     @Column(unique = true)
     private String name;
 
-    @Column(unique = true)
     private String address;
 
     @Column(unique = true)
@@ -45,11 +43,9 @@ public class Office {
 
     private boolean active = true;
     
-    @JsonManagedReference
     @OneToMany(mappedBy = "originOffice")
     private List<Shipment> originShipments = new ArrayList<>();
 
-    @JsonManagedReference
     @OneToMany(mappedBy = "destinationOffice")
     private List<Shipment> destinationShipments = new ArrayList<>();
 

@@ -1,8 +1,10 @@
 package com.paul.shitment.shipment_service.mappers;
 
+
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
+import com.paul.shitment.shipment_service.dto.office.OfficeResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.models.entities.Office;
@@ -27,5 +29,12 @@ public class OfficeMapper {
             office.setAddress(dto.address());
             office.setPhone(dto.phone()); 
         return office;
+    }
+
+    public OfficeResponse officeForCooperative(Office office) {
+        return new OfficeResponse(
+            office.getId(),
+            office.getName()
+        );
     }
 }

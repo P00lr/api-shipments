@@ -1,7 +1,9 @@
 package com.paul.shitment.shipment_service.dto.shipment;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -14,7 +16,6 @@ import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 @Schema(name = "ShipmentRequestDto", description = "DTO para la creación de un envío")
 public record ShipmentRequestDto(
 
-
         @Schema(
                 description = "UUID de la oficina de destino", 
                 example = "3fa85f64-5717-4562-b3fc-2c963f66afa6", 
@@ -22,10 +23,18 @@ public record ShipmentRequestDto(
         @NotNull
         UUID destinationOfficeId,
 
-
+        @NotNull(message = "Los datos del remitente son obligatorios")
+        @Valid // <--- ¡Vital! Esto hace que Spring valide lo que hay dentro de ShipmentPersonRequestDto
         ShipmentPersonRequestDto sender,
 
+        @NotNull(message = "Los datos del destinatario son obligatorios")
+        @Valid // <--- Vital para validar los campos internos del destinatario
         ShipmentPersonRequestDto recipient,
+
+        /* @NotNull(message = "Los datos de la persona que recibio son obligatorios")
+        @Valid // <--- Vital para validar los campos internos del destinatario
+        ShipmentPersonRequestDto receivedBy, */
+
         
         @Schema(
                 description = "Descripción del ítem a enviar", 
@@ -44,6 +53,6 @@ public record ShipmentRequestDto(
                 requiredMode = RequiredMode.REQUIRED)
         @NotNull(message = "El costo de envío es obligatorio")
         @Positive(message = "El costo de envío debe ser mayor que 0")
-        Double shippingCost
+        BigDecimal shippingCost
 ) { }
 

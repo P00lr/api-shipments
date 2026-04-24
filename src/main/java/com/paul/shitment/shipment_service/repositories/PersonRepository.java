@@ -11,8 +11,8 @@ import com.paul.shitment.shipment_service.models.entities.Person;
 
 @Repository
 public interface PersonRepository extends JpaRepository<Person, UUID> {
-    boolean existsByCi(String ci);
+    boolean existsByDocumentNumber(String ci);
     boolean existsByPhone(String phone);
-    Optional<Person> findByCi(String ci);
+    Optional<Person> findByDocumentNumber(String ci);
     Optional<Person> findByPhone(String phone);
 }

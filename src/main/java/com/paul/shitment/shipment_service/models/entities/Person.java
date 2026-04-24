@@ -1,16 +1,18 @@
 package com.paul.shitment.shipment_service.models.entities;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.lang.NonNull;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
+import com.paul.shitment.shipment_service.models.enums.DocumentType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -29,15 +31,17 @@ import lombok.NoArgsConstructor;
 public class Person {
 
     @Id
-    @NonNull
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private DocumentType documentType;
 
     @Column(unique = true)
-    private String ci;
+    private String documentNumber;
 
+    private String fullName;
+    
     @Column(unique = true)
     private String phone;
 
@@ -45,15 +49,9 @@ public class Person {
 
     private boolean active = true;
 
-    @JsonManagedReference
-    @OneToMany(mappedBy = "sender")
-    private List<Shipment> senderShipments = new ArrayList<>();
+    @OneToMany(mappedBy = "person")
+    private Set<ShipmentParty> shipmentParty = new HashSet<>();
 
-    @JsonManagedReference
-    @OneToMany(mappedBy = "recipient")
-    private List<Shipment> recipientShipments = new ArrayList<>();
-
-    @JsonManagedReference
     @OneToOne(mappedBy = "person")
     private AppUser user;
 
@@ -63,20 +61,13 @@ public class Person {
     }
 
     public void updateFromRequestDto(PersonRequestDto personDto) {
-        if (!this.getName().equals(personDto.name()))
-            this.setName(personDto.name());
+        if (!this.getFullName().equals(personDto.fullName()))
+            this.setFullName(personDto.fullName());
 
-        if (!this.getCi().equals(personDto.ci()))
-            this.setCi(personDto.ci());
+        if (!this.getDocumentNumber().equals(personDto.documentNumber()))
+            this.setDocumentNumber(personDto.documentNumber());
 
         if (!personDto.phone().equals(this.getPhone()))
             this.setPhone(personDto.phone());
     }
-
-
-    @Override
-    public String toString() {
-        return "Person [id=" + id + ", name=" + name + ", ci=" + ci + ", phone=" + phone + "]";
-    }
-
 }

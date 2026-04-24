@@ -1,32 +1,33 @@
 package com.paul.shitment.shipment_service.mappers;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentPersonDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
 import com.paul.shitment.shipment_service.models.entities.Shipment;
+import com.paul.shitment.shipment_service.models.entities.ShipmentParty;
+import com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole;
 
 @Component
 public class ShipmentMapper {
 
     public ShipmentResponseDto toShipmentResponseDto(Shipment shipment) {
+
         return new ShipmentResponseDto(
                 shipment.getId(),
 
                 shipment.getOriginOffice().getName(),
                 shipment.getDestinationOffice().getName(),
 
-                shipment.getSender().getName(),
-                shipment.getSender().getCi(),
-                shipment.getSender().getPhone(),
+                shipment.getCreatedBy().getPerson().getFullName(),
 
-                shipment.getRecipient().getName(),
-                shipment.getRecipient().getCi(),
-                shipment.getRecipient().getPhone(),
-
-                shipment.getCreatedBy().getPerson().getName(),
+                mapParty(shipment.getParties(), ShipmentPartyRole.SENDER),
+                mapParty(shipment.getParties(), ShipmentPartyRole.RECIPIENT),
+                mapParty(shipment.getParties(), ShipmentPartyRole.RECEIVED_BY),
 
                 shipment.getItemDescription(),
                 shipment.getTrackingCode(),
@@ -45,4 +46,16 @@ public class ShipmentMapper {
                 .collect(Collectors.toList());
     }
 
+    private ShipmentPersonDto mapParty(Set<ShipmentParty> parties, ShipmentPartyRole role) {
+        return parties.stream()
+                .filter(p -> p.getRole() == role)
+                .findFirst()
+                .map(p -> new ShipmentPersonDto(
+                        p.getDocumentType().name(),
+                        p.getDocumentNumber(),
+                        p.getFullName(),
+                        p.getPhone()))
+                .orElse(null);
+    }
+    
 }

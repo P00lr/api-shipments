@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.services.impl;
 
+import com.paul.shitment.shipment_service.repositories.TransportCooperativeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,6 +39,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
+    private final TransportCooperativeRepository transportCooperativeRepository;
+
     private final PasswordEncoder passwordEncoder;
 
     private final PersonRepository personRepository;
@@ -56,7 +59,6 @@ public class UserServiceImpl implements UserService {
 
         log.info("verificando existencia de registros");
         return userMapper.entitiesToDto(userRepository.findAll());
-
     }
 
     @Override
@@ -108,7 +110,7 @@ public class UserServiceImpl implements UserService {
         person.setRegistered(true);
         personRepository.save(person);
 
-        AppUser user =  new AppUser();
+        AppUser user = new AppUser();
 
         user.setUsername(userDto.username().trim());
         user.setPassword(passwordEncoder.encode(userDto.password().trim()));
@@ -156,10 +158,9 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateUserPassword(@NonNull UUID id, UserPasswordUpdateDto passwordDto) {
         AppUser user = userValidator.validateForUpdatePassword(id, passwordDto);
 
-        user.setPassword(passwordDto.newPassword());
+        user.setPassword(passwordEncoder.encode(passwordDto.newPassword()));
         userRepository.save(user);
 
         return userMapper.entityToDto(user);
     }
-
 }

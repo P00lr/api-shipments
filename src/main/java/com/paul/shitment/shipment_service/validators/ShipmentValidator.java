@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.validators;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import org.springframework.lang.NonNull;
@@ -24,7 +25,6 @@ public class ShipmentValidator {
     private final ShipmentRepository shipmentRepository;
 
     private final OfficeValidator officeValidation;
-
 
     private final PersonValidator personValidator;
 
@@ -51,15 +51,14 @@ public class ShipmentValidator {
 
     public String validateTerm(String term) {
         if (term == null || term.trim().isEmpty())
-            throw new ValidationException("Ingrese un palabra para buscar, ej: Nro CI, telefono, codigo de envio");
+            throw new ShipmentValidationException("Ingrese un palabra para buscar, ej: Nro CI, telefono, codigo de envio");
 
         return term.trim();
     }
 
-    public void requiresIDByAmount(Double price, String recipientCI, String inputCI) {
-        if (price >= 50) {
-            personValidator.validateCiMatch(recipientCI, inputCI);
-        }
+    public void validateDelivery(Shipment shipment, String documentNumber) {
+        if(shipment.getParties().stream().noneMatch(p -> p.getDocumentNumber().equals(documentNumber)))
+            throw new ValidationException("El numero de documento no coincide");
     }
 
 }
