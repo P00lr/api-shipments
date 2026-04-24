@@ -119,10 +119,10 @@ public class UserServiceImpl implements UserService {
         user.setOffice(office);
 
         Role role = roleValidator.getRoleByNameOrThrow("ROLE_USER");
-        //Role role2 = roleValidator.getRoleByNameOrThrow("ROLE_ADMIN");
+        Role role2 = roleValidator.getRoleByNameOrThrow("ROLE_ADMIN");
 
         user.getRoles().add(role);
-        //user.getRoles().add(role2);
+        user.getRoles().add(role2);
 
         userRepository.save(user);
 
