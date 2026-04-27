@@ -1,0 +1,2655 @@
+{
+  "projectInfo": {
+    "name": "Shipment Service API",
+    "description": "API REST para la gestión de envíos, usuarios, oficinas, cooperativas de transporte y administración de permisos y roles",
+    "version": "1.0.0",
+    "framework": "Spring Boot 3.x",
+    "language": "Java",
+    "database": "PostgreSQL",
+    "authentication": "JWT (JSON Web Token)",
+    "documentation": "OpenAPI 3.0 (Swagger)"
+  },
+  "baseUrl": "http://localhost:8080",
+  "serverPort": 8080,
+  "database": {
+    "type": "PostgreSQL",
+    "url": "jdbc:postgresql://localhost:5432/db_shipment",
+    "username": "postgres",
+    "driverClassName": "org.postgresql.Driver",
+    "jpa": {
+      "dialect": "org.hibernate.dialect.PostgreSQLDialect",
+      "ddlAuto": "update",
+      "showSql": true,
+      "formatSql": true
+    }
+  },
+  "authentication": {
+    "type": "JWT (Bearer Token)",
+    "tokenLocation": "Authorization header",
+    "tokenFormat": "Bearer {token}",
+    "secretKey": {
+      "environment": "spring.security.jwt.secret",
+      "devDefault": "mysecretkeytest12345678901234567890123456789012",
+      "algorithm": "HMAC-SHA256"
+    },
+    "expiration": {
+      "environment": "spring.security.jwt.expiration",
+      "devDefault": 3600000,
+      "unit": "milliseconds",
+      "devDefaultHours": 1
+    },
+    "claims": {
+      "subject": "username",
+      "uuid": "UUID del usuario",
+      "officeId": "UUID de la oficina del usuario",
+      "roles": "Lista de roles del usuario (ADMIN, USER, etc)",
+      "issuedAt": "fecha y hora de emisión",
+      "expiration": "fecha y hora de vencimiento"
+    },
+    "sessionManagement": "STATELESS - No se almacenan sesiones en servidor",
+    "roles": [
+      {
+        "name": "ADMIN",
+        "description": "Acceso total a la API, puede crear/modificar/eliminar cualquier recurso",
+        "permissions": "CRUD en todos los endpoints"
+      },
+      {
+        "name": "USER",
+        "description": "Acceso limitado, solo lectura en envíos",
+        "permissions": "GET /api/v1/shipments/*"
+      }
+    ]
+  },
+  "cors": {
+    "enabled": true,
+    "allowedOrigins": [
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:4200",
+      "https://guileless-gumdrop-0b2da7.netlify.app"
+    ],
+    "allowedMethods": [
+      "GET",
+      "POST",
+      "PUT",
+      "DELETE",
+      "PATCH",
+      "OPTIONS"
+    ],
+    "allowedHeaders": [
+      "*"
+    ],
+    "exposedHeaders": [
+      "Authorization",
+      "Content-Type"
+    ],
+    "allowCredentials": true,
+    "maxAge": 3600
+  },
+  "securityRules": {
+    "publicEndpoints": [
+      "/api/auth/**",
+      "/error"
+    ],
+    "readOnlyRoles": {
+      "description": "Solo roles ADMIN pueden leer datos de configuración",
+      "endpoints": [
+        "GET /api/v1/transportCooperatives",
+        "GET /api/v1/transportCooperatives/**",
+        "GET /api/v1/offices",
+        "GET /api/v1/offices/**",
+        "GET /api/v1/persons",
+        "GET /api/v1/persons/**",
+        "GET /api/v1/users",
+        "GET /api/v1/permissions",
+        "GET /api/v1/permissions/**",
+        "GET /api/v1/roles",
+        "GET /api/v1/roles/**"
+      ],
+      "requiredRole": "ADMIN"
+    },
+    "shipmentReadRules": {
+      "description": "Usuarios autenticados pueden ver envíos",
+      "endpoints": [
+        "GET /api/v1/shipments",
+        "GET /api/v1/shipments/**"
+      ],
+      "requiredRoles": [
+        "ADMIN",
+        "USER"
+      ]
+    },
+    "writeOperations": {
+      "description": "Solo ADMIN puede crear/modificar/eliminar",
+      "methods": [
+        "POST /api/v1/**",
+        "PUT /api/v1/**",
+        "DELETE /api/v1/**"
+      ],
+      "requiredRole": "ADMIN"
+    },
+    "defaultRule": "Requiere autenticación"
+  },
+  "errorHandling": {
+    "structure": {
+      "error": "string - Tipo de error (ej. NOT_FOUND, BAD_REQUEST, CONFLICT)",
+      "message": "string - Mensaje descriptivo del error",
+      "date": "LocalDateTime - Fecha y hora del error",
+      "code": "integer - Código HTTP del error",
+      "path": "string - Ruta del endpoint donde ocurrió el error"
+    },
+    "exceptions": [
+      {
+        "exceptionClass": "ResourceNotFoundException",
+        "httpStatus": 404,
+        "description": "El recurso solicitado no existe",
+        "example": {
+          "error": "NOT_FOUND",
+          "message": "Usuario no encontrado con ID: 123e4567-e89b-12d3-a456-426614174000",
+          "code": 404,
+          "path": "/api/v1/users/123e4567-e89b-12d3-a456-426614174000"
+        }
+      },
+      {
+        "exceptionClass": "MethodArgumentNotValidException",
+        "httpStatus": 400,
+        "description": "Errores de validación en los parámetros de entrada",
+        "example": {
+          "error": "BAD_REQUEST",
+          "message": "username: El username es obligatorio, email: El email no es válido",
+          "code": 400,
+          "path": "/api/v1/users"
+        }
+      },
+      {
+        "exceptionClass": "PersonValidationException",
+        "httpStatus": 409,
+        "description": "Errores de validación específicos de persona",
+        "example": {
+          "error": "CONFLICT",
+          "message": "El número de documento ya existe",
+          "code": 409,
+          "path": "/api/v1/persons"
+        }
+      },
+      {
+        "exceptionClass": "OfficeValidationException",
+        "httpStatus": 409,
+        "description": "Errores de validación específicos de oficina",
+        "example": {
+          "error": "CONFLICT",
+          "message": "La oficina con ese nombre ya existe",
+          "code": 409,
+          "path": "/api/v1/offices"
+        }
+      },
+      {
+        "exceptionClass": "UserValidationException",
+        "httpStatus": 409,
+        "description": "Errores de validación específicos de usuario",
+        "example": {
+          "error": "CONFLICT",
+          "message": "El nombre de usuario ya está registrado",
+          "code": 409,
+          "path": "/api/v1/users"
+        }
+      },
+      {
+        "exceptionClass": "ShipmentValidationException",
+        "httpStatus": 409,
+        "description": "Errores de validación específicos de envío",
+        "example": {
+          "error": "CONFLICT",
+          "message": "No se puede entregar un envío ya entregado",
+          "code": 409,
+          "path": "/api/v1/shipments/123e4567-e89b-12d3-a456-426614174000/deliver"
+        }
+      },
+      {
+        "exceptionClass": "TransportCooperativeException",
+        "httpStatus": 500,
+        "description": "Errores en operaciones de cooperativa de transporte",
+        "example": {
+          "error": "INTERNAL_SERVER_ERROR",
+          "message": "Error al asignar oficinas a la cooperativa",
+          "code": 500,
+          "path": "/api/v1/transportCooperatives/assignOffices"
+        }
+      },
+      {
+        "exceptionClass": "ResourceAlreadyExistsException",
+        "httpStatus": 409,
+        "description": "El recurso ya existe",
+        "example": {
+          "error": "CONFLICT",
+          "message": "Ya existe un registro con los datos proporcionados",
+          "code": 409,
+          "path": "/api/v1/offices"
+        }
+      },
+      {
+        "exceptionClass": "Exception (Generic)",
+        "httpStatus": 500,
+        "description": "Error no controlado del servidor",
+        "example": {
+          "error": "INTERNAL_SERVER_ERROR",
+          "message": "Ocurrió un error inesperado",
+          "code": 500,
+          "path": "/api/v1/shipments"
+        }
+      }
+    ]
+  },
+  "pagination": {
+    "description": "Sistema de paginación personalizado usando Spring Data Page",
+    "pageResponse": {
+      "content": "List<T> - Lista de elementos en la página actual",
+      "pageNo": "int - Número de página (base 0)",
+      "size": "int - Cantidad de elementos por página",
+      "totalElements": "Long - Cantidad total de elementos disponibles",
+      "totalPages": "int - Cantidad total de páginas",
+      "first": "boolean - Indica si es la primera página",
+      "last": "boolean - Indica si es la última página",
+      "hasNext": "boolean - Indica si hay página siguiente",
+      "hasPrevious": "boolean - Indica si hay página anterior"
+    },
+    "queryParameters": {
+      "page": "int - Número de página (default: 0)",
+      "size": "int - Cantidad de elementos por página (default: 10, máximo: 50)",
+      "sort": "string - Campo y dirección de ordenamiento (ej: id,desc)"
+    },
+    "example": {
+      "url": "/api/v1/users/paged?page=0&size=10&sort=id,desc",
+      "response": {
+        "content": [],
+        "pageNo": 0,
+        "size": 10,
+        "totalElements": 150,
+        "totalPages": 15,
+        "first": true,
+        "last": false,
+        "hasNext": true,
+        "hasPrevious": false
+      }
+    }
+  },
+  "controllers": [
+    {
+      "controllerName": "AuthController",
+      "basePath": "/api/auth",
+      "description": "Autenticación de usuarios - Registro, Login y Logout",
+      "requiresAuthentication": false,
+      "corsAllowed": false,
+      "endpoints": [
+        {
+          "id": "auth_register",
+          "method": "POST",
+          "path": "/api/auth/register",
+          "summary": "Registrar nuevo usuario",
+          "description": "Crea un nuevo usuario en el sistema con sus datos personales",
+          "authentication": "None - Público",
+          "parameters": [],
+          "requestBody": {
+            "type": "UserRequestDto",
+            "description": "Datos del nuevo usuario a registrar",
+            "required": true,
+            "example": {
+              "person": {
+                "documentType": "CI",
+                "documentNumber": "12345678",
+                "fullName": "Juan Pérez García",
+                "phone": "77712345678"
+              },
+              "username": "juanperez",
+              "password": "Pass1234#",
+              "email": "juan.perez@email.com",
+              "officeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            },
+            "schema": {
+              "person": "PersonRequestDto (Objeto anidado, validado)",
+              "username": "string[3-15] - Patrón: [a-zA-Z0-9\\s,\\.áéíóúÁÉÍÓÚñÑ\\-]",
+              "password": "string[8-15] - Patrón: [a-zA-Z0-9._\\-#$]",
+              "email": "string - Formato email válido",
+              "officeId": "UUID - Identificador de la oficina"
+            }
+          },
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 201,
+            "description": "Usuario creado exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "documentType": "CI",
+              "documentNumber": "12345678",
+              "fullName": "Juan Pérez García",
+              "phone": "77712345678",
+              "username": "juanperez",
+              "email": "juan.perez@email.com",
+              "officeName": "Oficina Central",
+              "active": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Usuario registrado exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos (validación fallida)"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "El usuario ya existe (username o documento duplicado)"
+            }
+          ]
+        },
+        {
+          "id": "auth_login",
+          "method": "POST",
+          "path": "/api/auth/login",
+          "summary": "Iniciar sesión",
+          "description": "Autentica el usuario y retorna un token JWT para acceder a recursos protegidos",
+          "authentication": "None - Público",
+          "parameters": [],
+          "requestBody": {
+            "type": "LoginRequestDto",
+            "description": "Credenciales de login",
+            "required": true,
+            "example": {
+              "username": "juanperez",
+              "password": "Pass1234#"
+            },
+            "schema": {
+              "username": "string - Nombre de usuario (obligatorio)",
+              "password": "string - Contraseña (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "LoginResponseDto",
+            "statusCode": 200,
+            "description": "Login exitoso - JWT generado",
+            "example": {
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqdWFucGVyZXoiLCJpYXQiOjE3MzE0MjM0MDAsImV4cCI6MTczMTQyNzAwMCwidXVpZCI6IjNmYTg1ZjY0LTU3MTctNDU2Mi1iM2ZjLTJjOTYzZjY2YWZhNiIsIm9mZmljZUlkIjoiODZjODVmNjQtNTcxNy00NTYyLWEzZmMtMmM5NjNmNjZhZmE2Iiwicm9sZXMiOlsiUk9MRV9VU0VSIl19.example"
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Autenticación exitosa, JWT retornado"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Username o password vacío"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Credenciales inválidas"
+            },
+            {
+              "code": 429,
+              "status": "TOO_MANY_REQUESTS",
+              "description": "Demasiados intentos de login fallidos (lockout: 600000ms)"
+            }
+          ],
+          "notes": [
+            "Máximo 5 intentos de login fallidos",
+            "Bloqueo de 10 minutos (600000ms) después de alcanzar el límite",
+            "El token JWT expira después de 1 hora en desarrollo"
+          ]
+        },
+        {
+          "id": "auth_logout",
+          "method": "POST",
+          "path": "/api/auth/logout",
+          "summary": "Cerrar sesión",
+          "description": "Invalida el token JWT del usuario actual. En un sistema JWT puro, el cliente debe descartar el token",
+          "authentication": "Required - Bearer Token",
+          "parameters": [],
+          "requestBody": null,
+          "response": {
+            "type": "void",
+            "statusCode": 204,
+            "description": "Sesión cerrada exitosamente",
+            "example": null
+          },
+          "statusCodes": [
+            {
+              "code": 204,
+              "status": "NO_CONTENT",
+              "description": "Logout exitoso"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            }
+          ],
+          "notes": [
+            "En un sistema JWT puro, el servidor simplemente invalida el token internamente",
+            "El cliente debe descartar el token almacenado localmente",
+            "Se recomienda usar un blacklist o invalidar el token en base de datos"
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "CooperativeController",
+      "basePath": "/api/v1/transportCooperatives",
+      "description": "Gestión de cooperativas de transporte y asignación de oficinas",
+      "requiresAuthentication": true,
+      "corsAllowed": false,
+      "endpoints": [
+        {
+          "id": "coop_getAll",
+          "method": "GET",
+          "path": "/api/v1/transportCooperatives",
+          "summary": "Obtener todas las cooperativas",
+          "description": "Retorna una lista completa de todas las cooperativas de transporte registradas en el sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": null,
+          "response": {
+            "type": "List<TransportCooperativeResponse>",
+            "statusCode": 200,
+            "description": "Lista de cooperativas obtenida exitosamente",
+            "example": [
+              {
+                "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                "name": "Cooperativa Central",
+                "enabled": true
+              },
+              {
+                "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+                "name": "Cooperativa Norte",
+                "enabled": true
+              }
+            ]
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Lista de cooperativas retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "coop_getWithOffices",
+          "method": "GET",
+          "path": "/api/v1/transportCooperatives/{cooperativeUUID}/whith-offices",
+          "summary": "Obtener cooperativa con sus oficinas",
+          "description": "Retorna una cooperativa específica junto con todas las oficinas asignadas a ella",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "cooperativeUUID",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la cooperativa",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "CooperativeWhithOfficesResponse",
+            "statusCode": 200,
+            "description": "Cooperativa con oficinas obtenida exitosamente",
+            "example": {
+              "cooperativeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "cooperativeName": "Cooperativa Central",
+              "offices": [
+                {
+                  "officeId": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+                  "officeName": "Oficina Central"
+                },
+                {
+                  "officeId": "9fc92f64-6717-4562-b3fc-2c963f66afa6",
+                  "officeName": "Sucursal Norte"
+                }
+              ]
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Cooperativa obtenida exitosamente"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Cooperativa no encontrada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "coop_getById",
+          "method": "GET",
+          "path": "/api/v1/transportCooperatives/{id}",
+          "summary": "Obtener cooperativa por ID",
+          "description": "Retorna los datos de una cooperativa específica según su UUID",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la cooperativa",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "TransportCooperativeResponse",
+            "statusCode": 200,
+            "description": "Cooperativa obtenida exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "name": "Cooperativa Central",
+              "enabled": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Cooperativa encontrada"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Cooperativa no encontrada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "coop_create",
+          "method": "POST",
+          "path": "/api/v1/transportCooperatives",
+          "summary": "Crear nueva cooperativa",
+          "description": "Crea una nueva cooperativa de transporte en el sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "TransportCooperativeRequest",
+            "description": "Datos de la cooperativa a crear",
+            "required": true,
+            "example": {
+              "name": "Cooperativa Nueva",
+              "enabled": true
+            },
+            "schema": {
+              "name": "string[3-100] - Nombre de la cooperativa (obligatorio)",
+              "enabled": "boolean - Indica si la cooperativa está habilitada (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "TransportCooperativeResponse",
+            "statusCode": 201,
+            "description": "Cooperativa creada exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "name": "Cooperativa Nueva",
+              "enabled": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Cooperativa creada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Cooperativa ya existe"
+            }
+          ]
+        },
+        {
+          "id": "coop_assignOffices",
+          "method": "POST",
+          "path": "/api/v1/transportCooperatives/assignOffices",
+          "summary": "Asignar oficinas a cooperativa",
+          "description": "Asigna una o más oficinas a una cooperativa de transporte específica",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "CooperativeOfficeRequest",
+            "description": "Datos para asignar oficinas",
+            "required": true,
+            "example": {
+              "cooperativeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "officesId": [
+                "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+                "9fc92f64-6717-4562-b3fc-2c963f66afa6"
+              ]
+            },
+            "schema": {
+              "cooperativeId": "UUID - ID de la cooperativa (obligatorio)",
+              "officesId": "Set<UUID> - IDs de oficinas a asignar, mínimo 1 (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "CooperativeOfficeResponse",
+            "statusCode": 200,
+            "description": "Oficinas asignadas exitosamente",
+            "example": {
+              "cooperativeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "cooperativeName": "Cooperativa Central",
+              "officeResponseDtos": [
+                {
+                  "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+                  "name": "Oficina Central",
+                  "address": "Av. Siempre Viva 123",
+                  "phone": "77712345678",
+                  "active": true
+                }
+              ]
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Oficinas asignadas exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Cooperativa u oficina no encontrada"
+            },
+            {
+              "code": 500,
+              "status": "INTERNAL_SERVER_ERROR",
+              "description": "Error al asignar oficinas"
+            }
+          ]
+        },
+        {
+          "id": "coop_update",
+          "method": "PUT",
+          "path": "/api/v1/transportCooperatives/{id}",
+          "summary": "Actualizar cooperativa",
+          "description": "Actualiza los datos de una cooperativa existente",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la cooperativa",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "TransportCooperativeRequest",
+            "description": "Datos actualizados de la cooperativa",
+            "required": true,
+            "example": {
+              "name": "Cooperativa Central Actualizada",
+              "enabled": true
+            }
+          },
+          "response": {
+            "type": "TransportCooperativeResponse",
+            "statusCode": 200,
+            "description": "Cooperativa actualizada exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "name": "Cooperativa Central Actualizada",
+              "enabled": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Cooperativa actualizada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Cooperativa no encontrada"
+            }
+          ]
+        },
+        {
+          "id": "coop_delete",
+          "method": "DELETE",
+          "path": "/api/v1/transportCooperatives/{id}",
+          "summary": "Eliminar cooperativa",
+          "description": "Desactiva una cooperativa (eliminación lógica, no se elimina de la base de datos)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la cooperativa",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "TransportCooperativeResponse",
+            "statusCode": 200,
+            "description": "Cooperativa desactivada exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "name": "Cooperativa Central",
+              "enabled": false
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Cooperativa desactivada exitosamente"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Cooperativa no encontrada"
+            }
+          ],
+          "notes": [
+            "Esta es una eliminación lógica - la cooperativa se desactiva pero no se elimina de la BD",
+            "El campo 'enabled' se establece en false"
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "OfficeController",
+      "basePath": "/api/v1/offices",
+      "description": "Gestión de oficinas de las cooperativas",
+      "requiresAuthentication": true,
+      "corsAllowed": "http://localhost:5173",
+      "endpoints": [
+        {
+          "id": "office_getPaged",
+          "method": "GET",
+          "path": "/api/v1/offices/paged",
+          "summary": "Obtener oficinas paginadas",
+          "description": "Retorna una lista paginada de oficinas con filtrado y ordenamiento configurable",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de elementos por página",
+              "example": 10
+            },
+            {
+              "name": "sort",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo y dirección de ordenamiento (ej: name,desc)",
+              "example": "name,asc"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<OfficeResponseDto>",
+            "statusCode": 200,
+            "description": "Página de oficinas obtenida exitosamente",
+            "example": {
+              "content": [
+                {
+                  "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+                  "name": "Oficina Central",
+                  "address": "Av. Siempre Viva 123",
+                  "phone": "77712345678",
+                  "active": true
+                }
+              ],
+              "pageNo": 0,
+              "size": 10,
+              "totalElements": 25,
+              "totalPages": 3,
+              "first": true,
+              "last": false,
+              "hasNext": true,
+              "hasPrevious": false
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Página de oficinas retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "office_getById",
+          "method": "GET",
+          "path": "/api/v1/offices/{id}",
+          "summary": "Obtener oficina por ID",
+          "description": "Retorna los datos de una oficina específica según su UUID",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la oficina",
+              "example": "8fb92f64-6717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "OfficeResponseDto",
+            "statusCode": 200,
+            "description": "Oficina obtenida exitosamente",
+            "example": {
+              "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+              "name": "Oficina Central",
+              "address": "Av. Siempre Viva 123",
+              "phone": "77712345678",
+              "active": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Oficina encontrada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Oficina no encontrada"
+            }
+          ]
+        },
+        {
+          "id": "office_create",
+          "method": "POST",
+          "path": "/api/v1/offices",
+          "summary": "Crear nueva oficina",
+          "description": "Crea una nueva oficina en el sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "OfficeRequestDto",
+            "description": "Datos de la oficina a crear",
+            "required": true,
+            "example": {
+              "name": "Sucursal Sur",
+              "address": "Calle Principal 456",
+              "phone": "77787654321"
+            },
+            "schema": {
+              "name": "string[4-60] - Patrón: [a-zA-Z0-9\\s,\\.áéíóúÁÉÍÓÚñÑ\\-]",
+              "address": "string[4-60] - Patrón: [a-zA-Z0-9\\s,\\.áéíóúÁÉÍÓÚñÑ\\-#/]",
+              "phone": "string[8-15] - Solo dígitos"
+            }
+          },
+          "response": {
+            "type": "OfficeResponseDto",
+            "statusCode": 201,
+            "description": "Oficina creada exitosamente",
+            "example": {
+              "id": "9fc92f64-6717-4562-b3fc-2c963f66afa6",
+              "name": "Sucursal Sur",
+              "address": "Calle Principal 456",
+              "phone": "77787654321",
+              "active": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Oficina creada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Oficina ya existe"
+            }
+          ]
+        },
+        {
+          "id": "office_update",
+          "method": "PUT",
+          "path": "/api/v1/offices/{id}",
+          "summary": "Actualizar oficina",
+          "description": "Actualiza los datos de una oficina existente",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la oficina",
+              "example": "8fb92f64-6717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "OfficeRequestDto",
+            "description": "Datos actualizados de la oficina",
+            "required": true,
+            "example": {
+              "name": "Oficina Central Actualizada",
+              "address": "Av. Siempre Viva 123 Piso 2",
+              "phone": "77712345679"
+            }
+          },
+          "response": {
+            "type": "OfficeResponseDto",
+            "statusCode": 200,
+            "description": "Oficina actualizada exitosamente",
+            "example": {
+              "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+              "name": "Oficina Central Actualizada",
+              "address": "Av. Siempre Viva 123 Piso 2",
+              "phone": "77712345679",
+              "active": true
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Oficina actualizada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Oficina no encontrada"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Datos duplicados en otra oficina"
+            }
+          ]
+        },
+        {
+          "id": "office_delete",
+          "method": "DELETE",
+          "path": "/api/v1/offices/{id}",
+          "summary": "Desactivar oficina",
+          "description": "Desactiva una oficina (eliminación lógica, no se elimina de la base de datos)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la oficina",
+              "example": "8fb92f64-6717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "OfficeResponseDto",
+            "statusCode": 200,
+            "description": "Oficina desactivada exitosamente",
+            "example": {
+              "id": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+              "name": "Oficina Central",
+              "address": "Av. Siempre Viva 123",
+              "phone": "77712345678",
+              "active": false
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Oficina desactivada exitosamente"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Oficina no encontrada"
+            }
+          ],
+          "notes": [
+            "Esta es una eliminación lógica - la oficina se desactiva pero no se elimina de la BD",
+            "El campo 'active' se establece en false"
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "PermissionController",
+      "basePath": "/api/v1/permissions",
+      "description": "Gestión de permisos del sistema",
+      "requiresAuthentication": true,
+      "corsAllowed": false,
+      "status": "VACÍO - No implementado",
+      "endpoints": []
+    },
+    {
+      "controllerName": "PersonController",
+      "basePath": "/api/v1/persons",
+      "description": "Gestión de personas registradas en el sistema",
+      "requiresAuthentication": true,
+      "corsAllowed": "http://localhost:5173",
+      "endpoints": [
+        {
+          "id": "person_getPaged",
+          "method": "GET",
+          "path": "/api/v1/persons",
+          "summary": "Obtener personas paginadas",
+          "description": "Retorna una lista paginada de todas las personas registradas",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de elementos por página",
+              "example": 10
+            },
+            {
+              "name": "sort",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo y dirección de ordenamiento",
+              "example": "fullName,asc"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<PersonResponseDto>",
+            "statusCode": 200,
+            "description": "Página de personas obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Página de personas retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "person_getById",
+          "method": "GET",
+          "path": "/api/v1/persons/{id}",
+          "summary": "Obtener persona por ID",
+          "description": "Retorna los datos de una persona específica según su UUID",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la persona",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PersonResponseDto",
+            "statusCode": 200,
+            "description": "Persona obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Persona encontrada"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Persona no encontrada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "person_getByCi",
+          "method": "GET",
+          "path": "/api/v1/persons/ci/{ci}",
+          "summary": "Obtener persona por número de documento (CI)",
+          "description": "Busca y retorna una persona según su número de documento (CI/DNI)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "ci",
+              "in": "path",
+              "type": "string",
+              "required": true,
+              "description": "Número de documento (CI/DNI)",
+              "example": "12345678"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PersonResponseDto",
+            "statusCode": 200,
+            "description": "Persona obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Persona encontrada"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Persona no encontrada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "person_existsByPhone",
+          "method": "GET",
+          "path": "/api/v1/persons/phone/{phone}",
+          "summary": "Verificar existencia por teléfono",
+          "description": "Verifica si existe una persona registrada con el número de teléfono especificado",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "phone",
+              "in": "path",
+              "type": "string",
+              "required": true,
+              "description": "Número de teléfono a verificar",
+              "example": "77712345678"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "Boolean",
+            "statusCode": 200,
+            "description": "Existencia verificada",
+            "example": true
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Verificación completada (true/false)"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "person_create",
+          "method": "POST",
+          "path": "/api/v1/persons",
+          "summary": "Crear nueva persona",
+          "description": "Crea un nuevo registro de persona en el sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "PersonRequestDto",
+            "description": "Datos de la persona a crear",
+            "required": true,
+            "example": {
+              "documentType": "CI",
+              "documentNumber": "12345678",
+              "fullName": "Juan Pérez García",
+              "phone": "77712345678"
+            },
+            "schema": {
+              "documentType": "Enum[CI, NIT, PASSPORT] - Tipo de documento (obligatorio)",
+              "documentNumber": "string[7-9] - Solo dígitos (obligatorio)",
+              "fullName": "string - Nombre completo (obligatorio)",
+              "phone": "string[8-15] - Solo dígitos (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "PersonResponseDto",
+            "statusCode": 201,
+            "description": "Persona creada exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Persona creada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Persona ya existe (documento duplicado)"
+            }
+          ]
+        },
+        {
+          "id": "person_update",
+          "method": "PUT",
+          "path": "/api/v1/persons/{id}",
+          "summary": "Actualizar persona",
+          "description": "Actualiza los datos de una persona existente",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la persona",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "PersonRequestDto",
+            "description": "Datos actualizados de la persona",
+            "required": true
+          },
+          "response": {
+            "type": "PersonResponseDto",
+            "statusCode": 200,
+            "description": "Persona actualizada exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Persona actualizada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Persona no encontrada"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Datos duplicados"
+            }
+          ]
+        },
+        {
+          "id": "person_delete",
+          "method": "DELETE",
+          "path": "/api/v1/persons/{id}",
+          "summary": "Desactivar persona",
+          "description": "Desactiva una persona (eliminación lógica)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único de la persona",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PersonResponseDto",
+            "statusCode": 200,
+            "description": "Persona desactivada exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Persona desactivada exitosamente"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Persona no encontrada"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "RoleController",
+      "basePath": "/api/v1/roles",
+      "description": "Gestión de roles del sistema",
+      "requiresAuthentication": true,
+      "corsAllowed": false,
+      "endpoints": [
+        {
+          "id": "role_getPaged",
+          "method": "GET",
+          "path": "/api/v1/roles",
+          "summary": "Obtener roles paginados",
+          "description": "Retorna una lista paginada de todos los roles disponibles",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de elementos por página",
+              "example": 10
+            },
+            {
+              "name": "sort",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo y dirección de ordenamiento"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<RoleResponseDto>",
+            "statusCode": 200,
+            "description": "Página de roles obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Página de roles retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "role_getById",
+          "method": "GET",
+          "path": "/api/v1/roles/{id}",
+          "summary": "Obtener rol por ID",
+          "description": "Retorna los datos de un rol específico según su UUID",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del rol",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "RoleResponseDto",
+            "statusCode": 200,
+            "description": "Rol obtenido exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Rol encontrado"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Rol no encontrado"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "role_create",
+          "method": "POST",
+          "path": "/api/v1/roles",
+          "summary": "Crear nuevo rol",
+          "description": "Crea un nuevo rol en el sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "RoleRequestDto",
+            "description": "Datos del rol a crear",
+            "required": true,
+            "example": {
+              "name": "SUPER_ADMIN"
+            },
+            "schema": {
+              "name": "string[3-60] - Nombre del rol (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "RoleResponseDto",
+            "statusCode": 201,
+            "description": "Rol creado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Rol creado exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Rol ya existe"
+            }
+          ]
+        },
+        {
+          "id": "role_update",
+          "method": "PUT",
+          "path": "/api/v1/roles/{id}",
+          "summary": "Actualizar rol",
+          "description": "Actualiza los datos de un rol existente",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del rol",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "RoleRequestDto",
+            "description": "Datos actualizados del rol",
+            "required": true,
+            "example": {
+              "name": "MODERATOR"
+            }
+          },
+          "response": {
+            "type": "RoleResponseDto",
+            "statusCode": 201,
+            "description": "Rol actualizado exitosamente",
+            "note": "Retorna 201 CREATED aunque es un PUT (posible bug)"
+          },
+          "statusCodes": [
+            {
+              "code": 201,
+              "status": "CREATED",
+              "description": "Rol actualizado exitosamente (estado incorrecto)"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Rol no encontrado"
+            }
+          ],
+          "issues": [
+            "El endpoint retorna 201 CREATED en lugar de 200 OK"
+          ]
+        },
+        {
+          "id": "role_delete",
+          "method": "DELETE",
+          "path": "/api/v1/roles/{id}",
+          "summary": "Desactivar rol",
+          "description": "Desactiva un rol del sistema",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del rol",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "String",
+            "statusCode": 200,
+            "description": "Rol desactivado exitosamente",
+            "example": "Se desactivo correctamente el rol: 3fa85f64-5717-4562-b3fc-2c963f66afa6"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Rol desactivado exitosamente"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ],
+          "notes": [
+            "El parámetro @PathVariable está definido sin nombre en el código, lo que puede causar problemas"
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "ShipmentController",
+      "basePath": "/api/v1/shipments",
+      "description": "Gestión de envíos - CRUD y seguimiento",
+      "requiresAuthentication": true,
+      "corsAllowed": "http://localhost:5173",
+      "endpoints": [
+        {
+          "id": "shipment_getPaged",
+          "method": "GET",
+          "path": "/api/v1/shipments",
+          "summary": "Obtener envíos paginados",
+          "description": "Retorna una lista paginada de envíos con información de seguimiento",
+          "authentication": "Required - ADMIN/USER role",
+          "parameters": [
+            {
+              "name": "page",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de elementos por página",
+              "example": 10
+            },
+            {
+              "name": "sort",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo y dirección de ordenamiento"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<ShipmentResponseDto>",
+            "statusCode": 200,
+            "description": "Página de envíos obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Página de envíos retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            }
+          ]
+        },
+        {
+          "id": "shipment_getById",
+          "method": "GET",
+          "path": "/api/v1/shipments/{id}",
+          "summary": "Obtener envío por ID",
+          "description": "Retorna los detalles completos de un envío específico",
+          "authentication": "Required - ADMIN/USER role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del envío",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "ShipmentResponseDto",
+            "statusCode": 200,
+            "description": "Envío obtenido exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "nameOriginOffice": "Oficina Central",
+              "nameDestinationOffice": "Sucursal Norte",
+              "createdBy": "admin",
+              "sender": {
+                "documentType": "CI",
+                "documentNumber": "12345678",
+                "fullName": "Juan Pérez",
+                "phone": "77712345678"
+              },
+              "recipient": {
+                "documentType": "CI",
+                "documentNumber": "87654321",
+                "fullName": "María López",
+                "phone": "77787654321"
+              },
+              "receivedBy": null,
+              "itemDescription": "Documentos importantes",
+              "trackingCode": "AB3-C4D",
+              "createAt": "2025-11-12T14:30:00",
+              "updateAt": "2025-11-12T15:00:00",
+              "deliveredAt": "2025-11-13T10:00:00",
+              "shippingCost": "50.0",
+              "status": "DELIVERED"
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Envío encontrado"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Envío no encontrado"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            }
+          ]
+        },
+        {
+          "id": "shipment_create",
+          "method": "POST",
+          "path": "/api/v1/shipments",
+          "summary": "Crear nuevo envío",
+          "description": "Crea un nuevo envío en el sistema con información del remitente y destinatario",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "ShipmentRequestDto",
+            "description": "Datos del envío a crear",
+            "required": true,
+            "example": {
+              "destinationOfficeId": "8fb92f64-6717-4562-b3fc-2c963f66afa6",
+              "sender": {
+                "documentType": "CI",
+                "documentNumber": "12345678",
+                "fullName": "Juan Pérez",
+                "phone": "77712345678"
+              },
+              "recipient": {
+                "documentType": "CI",
+                "documentNumber": "87654321",
+                "fullName": "María López",
+                "phone": "77787654321"
+              },
+              "itemDescription": "Documentos importantes",
+              "shippingCost": "50.0"
+            },
+            "schema": {
+              "destinationOfficeId": "UUID - Oficina de destino (obligatorio)",
+              "sender": "ShipmentPersonRequestDto - Datos del remitente (obligatorio, validado)",
+              "recipient": "ShipmentPersonRequestDto - Datos del destinatario (obligatorio, validado)",
+              "itemDescription": "string[4-260] - Descripción del item (obligatorio, validado)",
+              "shippingCost": "BigDecimal - Costo > 0 (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "ShipmentResponseDto",
+            "statusCode": 200,
+            "description": "Envío creado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Envío creado exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Error de validación de negocio"
+            }
+          ]
+        },
+        {
+          "id": "shipment_cancel",
+          "method": "DELETE",
+          "path": "/api/v1/shipments/{id}",
+          "summary": "Cancelar envío",
+          "description": "Cancela un envío existente (eliminación lógica, cambia estado a CANCELLED)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del envío",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "ShipmentResponseDto",
+            "statusCode": 200,
+            "description": "Envío cancelado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Envío cancelado exitosamente"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Envío no encontrado"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "No se puede cancelar un envío ya entregado"
+            }
+          ]
+        },
+        {
+          "id": "shipment_getSuggestions",
+          "method": "GET",
+          "path": "/api/v1/shipments/suggestions",
+          "summary": "Obtener sugerencias de envíos",
+          "description": "Retorna envíos que coincidan con un término de búsqueda (código de seguimiento, descripción, etc)",
+          "authentication": "Required - ADMIN/USER role",
+          "parameters": [
+            {
+              "name": "term",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Término de búsqueda (default: vacío para obtener todos)",
+              "example": "AB3"
+            },
+            {
+              "name": "page",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de elementos por página",
+              "example": 10
+            },
+            {
+              "name": "sort",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo y dirección de ordenamiento"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<ShipmentSuggestionDTO>",
+            "statusCode": 200,
+            "description": "Página de sugerencias obtenida exitosamente",
+            "example": {
+              "content": [
+                {
+                  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                  "trackingCode": "AB3-C4D",
+                  "itemDescription": "Documentos importantes",
+                  "fullName": "María López",
+                  "documentNumber": "87654321",
+                  "phone": "77787654321",
+                  "status": "PENDING",
+                  "shippingCost": "50.0",
+                  "createdAt": "2025-11-12T14:30:00"
+                }
+              ],
+              "pageNo": 0,
+              "size": 10,
+              "totalElements": 1,
+              "totalPages": 1,
+              "first": true,
+              "last": true,
+              "hasNext": false,
+              "hasPrevious": false
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Sugerencias retornadas"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            }
+          ]
+        },
+        {
+          "id": "shipment_deliver",
+          "method": "PATCH",
+          "path": "/api/v1/shipments/{shipmentUUID}/deliver",
+          "summary": "Marcar envío como entregado",
+          "description": "Marca un envío como entregado y puede requerir confirmación del número de documento del destinatario",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "shipmentUUID",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del envío",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "ShipmentDeliveryRequest",
+            "description": "Datos de entrega (número de documento del destinatario)",
+            "required": true,
+            "example": {
+              "documentNumber": "87654321"
+            },
+            "schema": {
+              "documentNumber": "string - Número de documento del destinatario (opcional)"
+            }
+          },
+          "response": {
+            "type": "ShipmentResponseDto",
+            "statusCode": 200,
+            "description": "Envío marcado como entregado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Envío marcado como entregado"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Envío no encontrado"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Envío ya está entregado o estado no permite entregas"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "controllerName": "UserController",
+      "basePath": "/api/v1/users",
+      "description": "Gestión de usuarios del sistema",
+      "requiresAuthentication": true,
+      "corsAllowed": "http://localhost:5173",
+      "endpoints": [
+        {
+          "id": "user_getAll",
+          "method": "GET",
+          "path": "/api/v1/users",
+          "summary": "Obtener todos los usuarios",
+          "description": "Retorna una lista completa de todos los usuarios registrados (sin paginación)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": null,
+          "response": {
+            "type": "List<UserResponseDto>",
+            "statusCode": 200,
+            "description": "Lista de usuarios obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Lista de usuarios retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ],
+          "notes": [
+            "Este endpoint retorna TODOS los usuarios sin paginación, puede ser lento con muchos registros"
+          ]
+        },
+        {
+          "id": "user_getPaged",
+          "method": "GET",
+          "path": "/api/v1/users/paged",
+          "summary": "Obtener usuarios paginados",
+          "description": "Retorna una lista paginada de usuarios con parámetros personalizables",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "pageNo",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Número de página (base 0, default: 0)",
+              "example": 0
+            },
+            {
+              "name": "size",
+              "in": "query",
+              "type": "integer",
+              "required": false,
+              "description": "Cantidad de registros por página (default: 10, máximo: 50)",
+              "example": 10
+            },
+            {
+              "name": "sortBy",
+              "in": "query",
+              "type": "string",
+              "required": false,
+              "description": "Campo por el cual ordenar (default: id)",
+              "example": "username"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "PageResponse<UserResponseDto>",
+            "statusCode": 200,
+            "description": "Página de usuarios obtenida exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Página de usuarios retornada"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ],
+          "notes": [
+            "El backend hace validaciones defensivas: pageNo < 0 → 0, size <= 0 → 10, size > 50 → 50"
+          ]
+        },
+        {
+          "id": "user_getById",
+          "method": "GET",
+          "path": "/api/v1/users/{id}",
+          "summary": "Obtener usuario por ID",
+          "description": "Retorna los datos de un usuario específico según su UUID",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del usuario",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 200,
+            "description": "Usuario obtenido exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Usuario encontrado"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Usuario no encontrado"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            }
+          ]
+        },
+        {
+          "id": "user_create",
+          "method": "POST",
+          "path": "/api/v1/users",
+          "summary": "Crear nuevo usuario",
+          "description": "Crea un nuevo usuario en el sistema (alternativa a /api/auth/register)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [],
+          "requestBody": {
+            "type": "UserRequestDto",
+            "description": "Datos del nuevo usuario",
+            "required": true,
+            "example": {
+              "person": {
+                "documentType": "CI",
+                "documentNumber": "12345678",
+                "fullName": "Juan Pérez García",
+                "phone": "77712345678"
+              },
+              "username": "juanperez",
+              "password": "Pass1234#",
+              "email": "juan.perez@email.com",
+              "officeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          },
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 200,
+            "description": "Usuario creado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Usuario creado exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Usuario ya existe (username o documento duplicado)"
+            }
+          ]
+        },
+        {
+          "id": "user_update",
+          "method": "PUT",
+          "path": "/api/v1/users/{id}",
+          "summary": "Actualizar usuario",
+          "description": "Actualiza los datos de un usuario existente (sin cambiar contraseña)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del usuario",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "UserUpdateRequestDto",
+            "description": "Datos actualizados del usuario",
+            "required": true,
+            "example": {
+              "person": {
+                "documentType": "CI",
+                "documentNumber": "12345678",
+                "fullName": "Juan Pérez García Actualizado",
+                "phone": "77712345679"
+              },
+              "username": "juanperez_new",
+              "email": "juan.perez.new@email.com"
+            },
+            "schema": {
+              "person": "PersonRequestDto - Datos personales (anidado, validado)",
+              "username": "string[3-15] - Username (obligatorio)",
+              "email": "string - Email válido (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 200,
+            "description": "Usuario actualizado exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Usuario actualizado exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Usuario no encontrado"
+            },
+            {
+              "code": 409,
+              "status": "CONFLICT",
+              "description": "Datos duplicados (username o email en otro usuario)"
+            }
+          ]
+        },
+        {
+          "id": "user_updatePassword",
+          "method": "PUT",
+          "path": "/api/v1/users/password/{id}",
+          "summary": "Actualizar contraseña del usuario",
+          "description": "Cambia la contraseña de un usuario. Requiere proporcionar la contraseña actual para validación",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del usuario",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": {
+            "type": "UserPasswordUpdateDto",
+            "description": "Contraseñas actual y nueva",
+            "required": true,
+            "example": {
+              "oldPassword": "OldPass123",
+              "newPassword": "NewPass123#"
+            },
+            "schema": {
+              "oldPassword": "string - Contraseña actual (obligatorio)",
+              "newPassword": "string[8-15] - Patrón: [a-zA-Z0-9._\\-#$] (obligatorio)"
+            }
+          },
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 200,
+            "description": "Contraseña actualizada exitosamente"
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Contraseña actualizada exitosamente"
+            },
+            {
+              "code": 400,
+              "status": "BAD_REQUEST",
+              "description": "Datos de entrada no válidos"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido / Contraseña actual incorrecta"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Usuario no encontrado"
+            }
+          ]
+        },
+        {
+          "id": "user_deactivate",
+          "method": "DELETE",
+          "path": "/api/v1/users/{id}",
+          "summary": "Desactivar usuario",
+          "description": "Desactiva un usuario (eliminación lógica, se marca como inactivo)",
+          "authentication": "Required - ADMIN role",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "type": "UUID",
+              "required": true,
+              "description": "Identificador único del usuario",
+              "example": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+            }
+          ],
+          "requestBody": null,
+          "response": {
+            "type": "UserResponseDto",
+            "statusCode": 200,
+            "description": "Usuario desactivado exitosamente",
+            "example": {
+              "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+              "documentType": "CI",
+              "documentNumber": "12345678",
+              "fullName": "Juan Pérez García",
+              "phone": "77712345678",
+              "username": "juanperez",
+              "email": "juan.perez@email.com",
+              "officeName": "Oficina Central",
+              "active": false
+            }
+          },
+          "statusCodes": [
+            {
+              "code": 200,
+              "status": "OK",
+              "description": "Usuario desactivado exitosamente"
+            },
+            {
+              "code": 401,
+              "status": "UNAUTHORIZED",
+              "description": "Token no proporcionado o inválido"
+            },
+            {
+              "code": 403,
+              "status": "FORBIDDEN",
+              "description": "Requiere rol ADMIN"
+            },
+            {
+              "code": 404,
+              "status": "NOT_FOUND",
+              "description": "Usuario no encontrado"
+            }
+          ],
+          "notes": [
+            "Esta es una eliminación lógica - el usuario se desactiva pero no se elimina de la BD",
+            "El campo 'active' se establece en false"
+          ]
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "totalControllers": 8,
+    "totalEndpoints": 47,
+    "activeControllers": 7,
+    "emptyControllers": 1,
+    "endpointsByMethod": {
+      "GET": 21,
+      "POST": 14,
+      "PUT": 8,
+      "PATCH": 1,
+      "DELETE": 7
+    },
+    "endpointsByAuthentication": {
+      "public": 3,
+      "authenticated": 44
+    },
+    "endpointsByRole": {
+      "ADMIN_ONLY": 42,
+      "ADMIN_or_USER": 2,
+      "PUBLIC": 3
+    }
+  },
+  "generatedAt": "2025-04-24T00:00:00Z",
+  "documentVersion": "1.0.0"
+}

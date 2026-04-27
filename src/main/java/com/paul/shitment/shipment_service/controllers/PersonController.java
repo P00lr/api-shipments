@@ -21,12 +21,12 @@ import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.dto.person.PersonResponseDto;
 import com.paul.shitment.shipment_service.services.PersonService;
 
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
@@ -37,34 +37,42 @@ public class PersonController {
 
     private final PersonService personService;
 
-    @Operation(summary = "Obtener personas paginadas")
+    @Operation(summary = "Obtener personas paginadas", description = "Retorna un listado paginado de todas las personas registradas")
+    @ApiResponse(responseCode = "200", description = "Listado de personas obtenido exitosamente")
     @GetMapping
     public ResponseEntity<PageResponse<PersonResponseDto>> getAllPersonsPaged(@NonNull Pageable pageable) {
         return ResponseEntity.ok(personService.getAllPersonsPaged(pageable));
     }
 
-    @Operation(summary = "Obtener persona por ID")
+    @Operation(summary = "Obtener persona por ID", description = "Retorna los datos completos de una persona específica por su UUID")
+    @ApiResponse(responseCode = "200", description = "Persona encontrada")
+    @ApiResponse(responseCode = "404", description = "Persona no encontrada")
     @GetMapping("/{id}")
     public ResponseEntity<PersonResponseDto> getPerson(
             @Parameter(description = "UUID de la persona")@NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(personService.getPersonById(id));
     }
 
-    @Operation(summary = "Obtener persona por CI")
+    @Operation(summary = "Obtener persona por CI", description = "Retorna los datos de una persona usando su número de documento (CI)")
+    @ApiResponse(responseCode = "200", description = "Persona encontrada")
+    @ApiResponse(responseCode = "404", description = "Persona con ese CI no existe")
     @GetMapping("/ci/{ci}")
     public ResponseEntity<PersonResponseDto> getPersonByCI(
             @Parameter(description = "CI de la persona") @PathVariable String ci) {
         return ResponseEntity.ok(personService.getPersonByCI(ci));
     }
 
-    @Operation(summary = "Verificar existencia por número de teléfono")
+    @Operation(summary = "Verificar existencia por teléfono", description = "Verifica si existe una persona registrada con el número de teléfono proporcionado")
+    @ApiResponse(responseCode = "200", description = "Búsqueda completada, retorna true o false")
     @GetMapping("/phone/{phone}")
     public ResponseEntity<Boolean> existsByPhone(
             @Parameter(description = "Número de teléfono a verificar") @PathVariable String phone) {
         return ResponseEntity.ok(personService.existsByPhone(phone));
     }
 
-    @Operation(summary = "Crear nueva persona")
+    @Operation(summary = "Crear nueva persona", description = "Crea un nuevo registro de persona con los datos proporcionados")
+    @ApiResponse(responseCode = "201", description = "Persona creada exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos o persona ya existe")
     @PostMapping
     public ResponseEntity<PersonResponseDto> createPerson(
             @Parameter(description = "Datos de la persona a crear") @Valid @RequestBody PersonRequestDto personDto) {
@@ -72,7 +80,10 @@ public class PersonController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @Operation(summary = "Actualizar persona existente")
+    @Operation(summary = "Actualizar persona", description = "Actualiza los datos de una persona existente")
+    @ApiResponse(responseCode = "200", description = "Persona actualizada exitosamente")
+    @ApiResponse(responseCode = "404", description = "Persona no encontrada")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PutMapping("/{id}")
     public ResponseEntity<PersonResponseDto> updatePerson(
             @Parameter(description = "Datos actualizados de la persona") @Valid @RequestBody PersonRequestDto personDto,
@@ -80,7 +91,9 @@ public class PersonController {
         return ResponseEntity.ok(personService.updatePerson(id, personDto));
     }
 
-    @Operation(summary = "Desactivar persona (eliminación lógica)")
+    @Operation(summary = "Desactivar persona", description = "Realiza una eliminación lógica (soft delete) de una persona")
+    @ApiResponse(responseCode = "200", description = "Persona desactivada exitosamente")
+    @ApiResponse(responseCode = "404", description = "Persona no encontrada")
     @DeleteMapping("/{id}")
     public ResponseEntity<PersonResponseDto> deactivatePerson(
             @Parameter(description = "UUID de la persona a desactivar")@NonNull @PathVariable UUID id) {

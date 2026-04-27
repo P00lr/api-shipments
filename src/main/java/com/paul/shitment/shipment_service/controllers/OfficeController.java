@@ -20,13 +20,13 @@ import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.services.OfficeService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -38,28 +38,36 @@ public class OfficeController {
     private final OfficeService officeService;
 
     
-    @Operation(summary = "Obtener oficinas paginadas", description = "Devuelve oficinas con paginación, tamaño y orden configurable")
+    @Operation(summary = "Obtener oficinas paginadas", description = "Retorna un listado paginado de todas las oficinas registradas")
+    @ApiResponse(responseCode = "200", description = "Listado de oficinas obtenido exitosamente")
     @GetMapping("/paged")
     public ResponseEntity<PageResponse<OfficeResponseDto>> getAllOffices(@NonNull Pageable pageable) {
         return ResponseEntity.ok(officeService.getAllOfficesPaged(pageable));
     }
 
 
-    @Operation(summary = "Obtener oficina por ID", description = "Devuelve los datos de una oficina específica según su UUID")
+    @Operation(summary = "Obtener oficina por ID", description = "Retorna los datos completos de una oficina específica por su UUID")
+    @ApiResponse(responseCode = "200", description = "Oficina encontrada")
+    @ApiResponse(responseCode = "404", description = "Oficina no encontrada")
     @GetMapping("/{id}")
     public ResponseEntity<OfficeResponseDto> getOffice(
         @Parameter(description = "UUID de la oficina") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(officeService.getOfficeById(id));
     }
 
-    @Operation(summary = "Crear una nueva oficina", description = "Crea una oficina con los datos proporcionados")
+    @Operation(summary = "Crear nueva oficina", description = "Crea una nueva oficina con los datos proporcionados")
+    @ApiResponse(responseCode = "200", description = "Oficina creada exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PostMapping
     public ResponseEntity<OfficeResponseDto> createOffice(
         @Parameter(description = "Datos de la oficina a crear") @Valid @NotNull @RequestBody OfficeRequestDto officeDto) {
         return ResponseEntity.ok(officeService.createOffice(officeDto));
     }
 
-    @Operation(summary = "Actualizar oficina existente", description = "Actualiza los datos de una oficina según su UUID")
+    @Operation(summary = "Actualizar oficina", description = "Actualiza los datos de una oficina existente")
+    @ApiResponse(responseCode = "200", description = "Oficina actualizada exitosamente")
+    @ApiResponse(responseCode = "404", description = "Oficina no encontrada")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PutMapping("/{id}")
     public ResponseEntity<OfficeResponseDto> updateOffice(
         @Parameter(description = "UUID de la oficina a actualizar") @NonNull @PathVariable UUID id,
@@ -67,7 +75,9 @@ public class OfficeController {
         return ResponseEntity.ok(officeService.updateOffice(id, officeDto));
     }
 
-    @Operation(summary = "Desactivar oficina", description = "Realiza una eliminación lógica de la oficina por su UUID")
+    @Operation(summary = "Desactivar oficina", description = "Realiza una eliminación lógica (soft delete) de una oficina")
+    @ApiResponse(responseCode = "200", description = "Oficina desactivada exitosamente")
+    @ApiResponse(responseCode = "404", description = "Oficina no encontrada")
     @DeleteMapping("/{id}")
     public ResponseEntity<OfficeResponseDto> deactivateOffice(
         @Parameter(description = "UUID de la oficina a desactivar")@NonNull @PathVariable UUID id) {

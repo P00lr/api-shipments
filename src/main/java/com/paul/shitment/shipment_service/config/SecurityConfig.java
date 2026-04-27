@@ -56,6 +56,7 @@ public class SecurityConfig {
                                                 // rutas públicas de autenticación (login, register, logout)
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/error").permitAll()
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
                                                 // rutas públicas solo de lectura (cualquiera puede ver)
                                                 .requestMatchers(HttpMethod.GET,

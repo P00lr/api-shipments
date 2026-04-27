@@ -23,12 +23,12 @@ import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
 import com.paul.shitment.shipment_service.dto.user.UserUpdateRequestDto;
 import com.paul.shitment.shipment_service.services.UserService;
 
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
@@ -39,13 +39,15 @@ public class UserController {
 
     private final UserService userService;
 
-    @Operation(summary = "Obtener todos los usuarios")
+    @Operation(summary = "Obtener todos los usuarios", description = "Retorna una lista completa de todos los usuarios sin paginación")
+    @ApiResponse(responseCode = "200", description = "Listado de usuarios obtenido exitosamente")
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @Operation(summary = "Obtener usuarios paginados")
+    @Operation(summary = "Obtener usuarios paginados", description = "Retorna un listado paginado de usuarios con opciones de ordenamiento")
+    @ApiResponse(responseCode = "200", description = "Listado paginado de usuarios obtenido exitosamente")
     @GetMapping("/paged")
     public ResponseEntity<PageResponse<UserResponseDto>> getAllUsersPaged(
             @RequestParam(defaultValue = "0")
@@ -68,21 +70,28 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsersPaged(pageNo, size, sortBy));
     }
 
-    @Operation(summary = "Obtener usuario por ID")
+    @Operation(summary = "Obtener usuario por ID", description = "Retorna los datos completos de un usuario específico por su UUID")
+    @ApiResponse(responseCode = "200", description = "Usuario encontrado")
+    @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDto> getUser(
             @Parameter(description = "UUID del usuario") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(userService.getUserByid(id));
     }
 
-    @Operation(summary = "Crear nuevo usuario")
+    @Operation(summary = "Crear nuevo usuario", description = "Crea un nuevo usuario con los datos proporcionados")
+    @ApiResponse(responseCode = "200", description = "Usuario creado exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PostMapping
     public ResponseEntity<UserResponseDto> createUser(
             @Parameter(description = "Datos del usuario a crear") @Valid @RequestBody UserRequestDto userDto) {
         return ResponseEntity.ok(userService.createUser(userDto));
     }
 
-    @Operation(summary = "Actualizar datos del usuario")
+    @Operation(summary = "Actualizar datos del usuario", description = "Actualiza la información personal y de acceso de un usuario existente")
+    @ApiResponse(responseCode = "200", description = "Usuario actualizado exitosamente")
+    @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDto> updateUser(
             @Parameter(description = "UUID del usuario a actualizar") @NonNull @PathVariable UUID id,
@@ -90,7 +99,10 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUser(id, userDto));
     }
 
-    @Operation(summary = "Actualizar contraseña del usuario")
+    @Operation(summary = "Actualizar contraseña", description = "Actualiza la contraseña de un usuario después de validar la contraseña actual")
+    @ApiResponse(responseCode = "200", description = "Contraseña actualizada exitosamente")
+    @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
+    @ApiResponse(responseCode = "401", description = "Contraseña actual incorrecta")
     @PutMapping("/password/{id}")
     public ResponseEntity<UserResponseDto> updatePassword(
             @Parameter(description = "UUID del usuario")@NonNull  @PathVariable UUID id,
@@ -98,7 +110,9 @@ public class UserController {
         return ResponseEntity.ok(userService.updateUserPassword(id, passwordDto));
     }
 
-    @Operation(summary = "Desactivar usuario (eliminación lógica)")
+    @Operation(summary = "Desactivar usuario", description = "Realiza una eliminación lógica (soft delete) de un usuario")
+    @ApiResponse(responseCode = "200", description = "Usuario desactivado exitosamente")
+    @ApiResponse(responseCode = "404", description = "Usuario no encontrado")
     @DeleteMapping("/{id}")
     public ResponseEntity<UserResponseDto> deactivate(
             @Parameter(description = "UUID del usuario a desactivar") @NonNull @PathVariable UUID id) {

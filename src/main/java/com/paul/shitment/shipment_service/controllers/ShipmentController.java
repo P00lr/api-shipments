@@ -26,12 +26,12 @@ import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
 import com.paul.shitment.shipment_service.services.ShipmentService;
 
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @AllArgsConstructor
@@ -42,7 +42,8 @@ public class ShipmentController {
 
     private final ShipmentService shipmentService;
 
-    @Operation(summary = "Obtener envíos paginados")
+    @Operation(summary = "Obtener envíos paginados", description = "Retorna un listado paginado de todos los envíos registrados")
+    @ApiResponse(responseCode = "200", description = "Listado de envíos obtenido exitosamente")
     @GetMapping
     public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(@NonNull Pageable pageable) {
 
@@ -50,14 +51,18 @@ public class ShipmentController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Obtener un envío por ID")
+    @Operation(summary = "Obtener envío por ID", description = "Retorna los datos completos de un envío específico por su UUID")
+    @ApiResponse(responseCode = "200", description = "Envío encontrado")
+    @ApiResponse(responseCode = "404", description = "Envío no encontrado")
     @GetMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> getShipment(
             @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID id) {
         return ResponseEntity.ok(shipmentService.getShipment(id));
     }
 
-    @Operation(summary = "Crear un nuevo envío")
+    @Operation(summary = "Crear nuevo envío", description = "Crea un nuevo envío con los datos del remitente, destinatario e item")
+    @ApiResponse(responseCode = "200", description = "Envío creado exitosamente")
+    @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     @PostMapping
     public ResponseEntity<ShipmentResponseDto> createShipment(
             @Parameter(description = "Datos del envío a crear") @Valid @RequestBody ShipmentRequestDto shipmentDto) {
@@ -72,14 +77,17 @@ public class ShipmentController {
         return ResponseEntity.ok(shipmentService.updateShipment(id, shipmentDto));
     } */
 
-    @Operation(summary = "Cancelar un envío (eliminación lógica)")
+    @Operation(summary = "Cancelar envío", description = "Realiza una eliminación lógica (soft delete) de un envío")
+    @ApiResponse(responseCode = "200", description = "Envío cancelado exitosamente")
+    @ApiResponse(responseCode = "404", description = "Envío no encontrado")
     @DeleteMapping("/{id}")
     public ResponseEntity<ShipmentResponseDto> canceledShipment(
             @Parameter(description = "UUID del envío a cancelar")@NonNull  @PathVariable UUID id) {
         return ResponseEntity.ok(shipmentService.canceledShipment(id));
     }
 
-    @Operation(summary = "Sugerencias de envíos por término")
+    @Operation(summary = "Obtener sugerencias de envíos", description = "Retorna sugerencias de envíos basadas en un término de búsqueda con paginación")
+    @ApiResponse(responseCode = "200", description = "Sugerencias obtenidas exitosamente")
     @GetMapping("/suggestions")
     public ResponseEntity<PageResponse<ShipmentSuggestionDTO>> getSuggestions(
             @Parameter(description = "Término de búsqueda") @RequestParam(name = "term", defaultValue = "") String term,
@@ -88,11 +96,14 @@ public class ShipmentController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Marcar un envío como entregado")
+    @Operation(summary = "Marcar envío como entregado", description = "Actualiza el estado del envío a ENTREGADO y registra la información del destinatario")
+    @ApiResponse(responseCode = "200", description = "Envío marcado como entregado exitosamente")
+    @ApiResponse(responseCode = "404", description = "Envío no encontrado")
+    @ApiResponse(responseCode = "400", description = "Datos de entrega inválidos")
     @PatchMapping("/{shipmentUUID}/deliver")
     public ResponseEntity<ShipmentResponseDto> markAsDelivered(
             @Parameter(description = "UUID del envío") @NonNull @PathVariable UUID shipmentUUID,
-            @Parameter(description = "Numero de documento del destinatario (opcional)") @RequestBody ShipmentDeliveryRequest request) {
+            @Parameter(description = "Información de entrega con número de documento del destinatario") @RequestBody ShipmentDeliveryRequest request) {
 
         return ResponseEntity.ok(shipmentService.markAsDelivered(shipmentUUID, request));
     }
