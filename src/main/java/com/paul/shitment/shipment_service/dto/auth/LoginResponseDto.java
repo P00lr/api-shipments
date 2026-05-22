@@ -9,7 +9,9 @@ public record LoginResponseDto(
             description = "Token JWT para autenticar solicitudes posteriores",
             example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
             requiredMode = RequiredMode.REQUIRED)
-    String token
+    String token,
+
+    UserLoginRequest user
 ) {
 
 }

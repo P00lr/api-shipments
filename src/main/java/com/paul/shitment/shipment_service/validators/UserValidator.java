@@ -2,7 +2,6 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
-import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +19,7 @@ import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.UserRepository;
 
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -57,7 +57,7 @@ public class UserValidator {
 
     }
 
-    public void validateUserForUpdate(@NonNull UUID id, UserUpdateRequestDto userDto) {
+    public void validateUserForUpdate(@lombok.NonNull UUID id, UserUpdateRequestDto userDto) {
         AppUser user = getUserByIdOrTrhow(id);
 
         Person person = user.getPerson();

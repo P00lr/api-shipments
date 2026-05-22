@@ -1,6 +1,5 @@
 package com.paul.shitment.shipment_service.services.impl;
 
-import com.paul.shitment.shipment_service.repositories.TransportCooperativeRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -38,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-
-    private final TransportCooperativeRepository transportCooperativeRepository;
 
     private final PasswordEncoder passwordEncoder;
 

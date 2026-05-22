@@ -27,6 +27,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+//cada solicitud pasa por este filtro
 @Component
 @Slf4j
 @RequiredArgsConstructor
@@ -92,7 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     }
 
-    // Método auxiliar
+    // METODOS AUXILIARES
     private void handleException(HttpServletRequest request, HttpServletResponse response, String message)
             throws IOException, ServletException {
         log.warn("JWT Auth Error: {}", message);

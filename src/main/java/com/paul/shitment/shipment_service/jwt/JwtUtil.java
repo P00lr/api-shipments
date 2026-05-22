@@ -18,6 +18,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 
+//aqui se genera el token
 @Slf4j
 @Component
 public class JwtUtil {
@@ -72,7 +73,8 @@ public class JwtUtil {
             // boleto coincide con el dueño
             return notExpired && usernameMatches; // el boleto es válido solo si no está vencido y pertenece al usuario
         } catch (JwtValidationException ex) {
-            log.error("Error validando token: {}", ex.getMessage()); // el portero anota cualquier error al revisar el boleto
+            log.error("Error validando token: {}", ex.getMessage()); // el portero anota cualquier error al revisar el
+                                                                     // boleto
             return false; // el boleto no pasa la validación
         }
     }

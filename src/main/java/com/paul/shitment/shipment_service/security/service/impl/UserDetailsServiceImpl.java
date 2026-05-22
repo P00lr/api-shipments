@@ -29,27 +29,30 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Transactional // permite cargar roles con lazy sin errores de sesión
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        AppUser user = userValidator.getUserByUsernameOrThrow(username);
         // busca al usuario por su nombre verifica que exista en el sistema
+        AppUser user = userValidator.getUserByUsernameOrThrow(username);
 
-        Set<GrantedAuthority> authorities = user.getRoles()
-                .stream()
+        // convierte los roles del usuario en permisos que Spring Security entiende
+        Set<GrantedAuthority> authorities = user.getRoles().stream()
                 .map(Role::getName)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toSet());
-        // convierte los roles del usuario en permisos que Spring Security entiende
 
         //devuelve User de spirng por que tambien usa el contrato de UserDetails
         return User.builder()
+        // nombre del usuario → nombre en el boleto
                 .username(user.getUsername())
-                // nombre del usuario → nombre en el boleto
-                .password(user.getPassword())
+
                 // contraseña cifrada → verificación segura de identidad
-                .authorities(authorities)
+                .password(user.getPassword())
+
                 // permisos del usuario → a qué áreas puede acceder
-                .disabled(!user.isActive())
+                .authorities(authorities)
+
                 // si el usuario está inactivo, el boleto queda automáticamente inválido
+                .disabled(!user.isActive())
+                
+                // usuario de seguridad listo para autenticación
                 .build();
-        // usuario de seguridad listo para autenticación
     }
 }

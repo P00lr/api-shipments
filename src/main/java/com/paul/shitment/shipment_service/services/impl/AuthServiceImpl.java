@@ -1,6 +1,8 @@
 package com.paul.shitment.shipment_service.services.impl;
 
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import com.paul.shitment.shipment_service.dto.auth.LoginRequestDto;
 import com.paul.shitment.shipment_service.dto.auth.LoginResponseDto;
+import com.paul.shitment.shipment_service.dto.auth.UserLoginRequest;
 import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
 import com.paul.shitment.shipment_service.jwt.JwtUtil;
@@ -101,8 +104,16 @@ public class AuthServiceImpl implements AuthService {
                     user.getOffice().getId(),
                     roles);
 
+            //harcodeado user y sus roles
+            Set<String> rolesToken = user.getRoles().stream()
+                .map(role -> role.getName())
+                .collect(Collectors.toSet());
+
+                //agregando payload para trabajar en el front
+            UserLoginRequest userData =  new UserLoginRequest(username, rolesToken);
+                
             // Se devuelve el token al frontend
-            return new LoginResponseDto(token);
+            return new LoginResponseDto(token, userData);
 
         } catch (BadCredentialsException ex) {
             // Si las credenciales son incorrectas → registra intento fallido
