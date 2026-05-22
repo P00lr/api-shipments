@@ -1,6 +1,8 @@
 package com.paul.shitment.shipment_service.mappers;
 
 
+import java.util.List;
+
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
@@ -36,5 +38,10 @@ public class OfficeMapper {
             office.getId(),
             office.getName()
         );
+    }
+
+    public List<OfficeResponse> toOfficesDto(List<Office> offices) {
+        return offices.stream()
+            .map(this::officeForCooperative).toList();
     }
 }
