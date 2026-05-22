@@ -4,17 +4,14 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.person.PersonRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentDeliveryRequest;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentDispatchRequest;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentDispatchResponse;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentReceivedRequest;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
@@ -35,7 +35,7 @@ import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.models.entities.Person;
 import com.paul.shitment.shipment_service.models.entities.Shipment;
 import com.paul.shitment.shipment_service.models.entities.ShipmentParty;
-import com.paul.shitment.shipment_service.models.enums.DocumentType;
+import com.paul.shitment.shipment_service.models.entities.Vehicle;
 import com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
@@ -45,7 +45,9 @@ import com.paul.shitment.shipment_service.validators.OfficeValidator;
 import com.paul.shitment.shipment_service.validators.PersonValidator;
 import com.paul.shitment.shipment_service.validators.ShipmentValidator;
 import com.paul.shitment.shipment_service.validators.UserValidator;
+import com.paul.shitment.shipment_service.validators.VehicleValidator;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,23 +72,40 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final JdbcTemplate jdbcTemplate;
     private final PaginationMapper paginationMapper;
 
+    private final VehicleValidator vehicleValidator;
+
     @Override
-    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(@NonNull Pageable pageable) {
+    public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(ShipmentStatus status, Pageable pageable) {
         log.info("Buscando registros de shipments paginados");
-        Page<Shipment> shipmentsPaged = shipmentRepository.findAll(pageable);
+
+        // Si pageable es nulo, creamos uno por defecto ordenado por fecha de creación
+        // descendente
+        Pageable pageRequest = (pageable != null) ? 
+            pageable : 
+            PageRequest.of(0, 10, Sort.by("createdAt").descending());
+
+        if (pageable != null && pageable.getSort().isUnsorted()) {
+            pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                    Sort.by("createdAt").descending());
+        }
+
+        Page<Shipment> shipmentsPaged = (status != null) ? shipmentRepository.findByStatus(status, pageRequest)
+                : shipmentRepository.findAll(pageRequest);
+
         return paginationMapper.toPageResponseDto(shipmentsPaged, shipmentMapper::toShipmentResponseDto);
     }
 
     @Override
-    public PageResponse<ShipmentSuggestionDTO> getSuggestions(String term, @NonNull Pageable pageable) {
+    public PageResponse<ShipmentSuggestionDTO> getSuggestions(String term, Pageable pageable) {
         log.info("Buscando sugerencias de envíos con término: {}", term);
         String validatedTerm = shipmentValidator.validateTerm(term);
-        validatedTerm = validatedTerm.trim();
 
-        // Crear pageable con máximo 5 resultados
-        Pageable paginationRequest = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_RESULTS_CI_PHONE));
 
-        Page<ShipmentSuggestionDTO> suggestionsPage = shipmentRepository.searchByTermPaged(validatedTerm, paginationRequest);
+        Pageable paginationRequest = PageRequest.of(pageable.getPageNumber(),
+                Math.min(pageable.getPageSize(), MAX_RESULTS_CI_PHONE));
+
+        Page<ShipmentSuggestionDTO> suggestionsPage = shipmentRepository.searchByTermPaged(validatedTerm,
+                paginationRequest);
         log.info("Se encontraron {} sugerencias", suggestionsPage.getContent().size());
         return paginationMapper.toPageResponseDto(suggestionsPage, item -> item);
     }
@@ -100,25 +119,70 @@ public class ShipmentServiceImpl implements ShipmentService {
         return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
+    @Override
+    public ShipmentResponseDto getShipmentByTrackingCode(String trackingCode) {
+        log.info("Verificando existencia de envio con id: {}", trackingCode);
+
+        Shipment shipment = shipmentValidator.getShipmentbyTrackingCodeOrThrow(trackingCode.trim());
+
+        return shipmentMapper.toShipmentResponseDto(shipment);
+    }
+
+    private AppUser getUserOfContext() {
+        // Leemos el contexto de seguridad con precaución
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Verificamos si realmente hay un usuario autenticado con token
+        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+
+        return userValidator.getUserByUsernameOrThrow(userDetails.getUsername());
+    }
+
+    @Override
+    @Transactional
+    public Set<ShipmentResponseDto> shipmentReceived(ShipmentReceivedRequest dto) {
+        log.info("ID DE ENVIOS: {}", dto);
+        Set<ShipmentResponseDto> shipments = new HashSet<>();
+
+        for (UUID shipmentId : dto.shipmentsId()) {
+            Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(shipmentId);
+            shipment.markAsWaitingPickup();
+            shipments.add(shipmentMapper.toShipmentResponseDto(shipment));
+        }
+        return shipments;
+    }
+
     @Transactional
     @Override
-    public ShipmentResponseDto createShipment(ShipmentRequestDto shipmentDto) {
+    public ShipmentResponseDto createShipment(@NonNull ShipmentRequestDto shipmentDto) {
         log.info("Creando nuevo shipment...");
+
+        AppUser user = getUserOfContext();
+
+        Office originOffice = officeValidation.getOfficeByIdOrThrow(user.getOffice().getId());
 
         Office destinationOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) auth.getPrincipal();
+        Shipment shipment = createProcessShipment(
+                shipmentDto,
+                originOffice,
+                destinationOffice,
+                user);
 
-        String username = userDetails.getUsername();
+            shipmentRepository.save(shipment);
 
-        AppUser user = userValidator.getUserByUsernameOrThrow(username);
-        UUID originOfficeId = user.getOffice().getId();
+        log.info("Shipment [{}] creado correctamente");
 
-        Office originOffice = officeValidation.getOfficeByIdOrThrow(originOfficeId);
+        return shipmentMapper.toShipmentResponseDto(shipment);
+    }
 
-        Person sender = handlePersonCreateOrUpdate(shipmentDto, true); // true para sender
-        Person recipient = handlePersonCreateOrUpdate(shipmentDto, false); // false para recipient
+    private Shipment createProcessShipment(ShipmentRequestDto shipmentDto,
+            Office originOffice,
+            Office destinationOffice,
+            AppUser user) {
+
+        Person sender = handlePersonCreateOrUpdate(personMapper.shipmentDtoToPersonSenderDto(shipmentDto));
+        Person recipient = handlePersonCreateOrUpdate(personMapper.shipmentDtoToPersonRecipientDto(shipmentDto));
 
         Shipment shipment = Shipment.builder()
                 .internalCode(generateInternalCode())
@@ -131,39 +195,12 @@ public class ShipmentServiceImpl implements ShipmentService {
                 .createdBy(user)
                 .build();
 
-        // Sender
         shipment.addParty(buildParty(sender, ShipmentPartyRole.SENDER));
-
-        // Recipient
         shipment.addParty(buildParty(recipient, ShipmentPartyRole.RECIPIENT));
 
-        shipmentRepository.save(shipment);
-        log.info("Shipment [{}] creado correctamente", shipment.getTrackingCode());
-
-        return shipmentMapper.toShipmentResponseDto(shipment);
+        return shipment;
     }
 
-    /*
-     * @Transactional
-     * 
-     * @Override
-     * public ShipmentResponseDto updateShipment(@NonNull UUID id,
-     * ShipmentUpdateRequestDto shipmentDto) {
-     * log.info("Verificando status REGISTERED para poder editar");
-     * Shipment shipment = shipmentValidator.validateForUpdate(id, shipmentDto);
-     * 
-     * log.info("Validando datos de sender y recipient");
-     * validatePersonInShipment(shipmentDto, shipment);
-     * 
-     * log.info("Actualizando registro");
-     * shipment.updateFromShipmentUpdateRequestDto(shipmentDto);
-     * 
-     * shipmentRepository.save(shipment);
-     * log.info("Se actualizo correctamente el registro {}", shipmentDto);
-     * 
-     * return shipmentMapper.toShipmentResponseDto(shipment);
-     * }
-     */
     private String generateInternalCode() {
         Long nextVal = jdbcTemplate.queryForObject("SELECT nextval('shipment_seq')", Long.class);
         String today = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE);
@@ -194,7 +231,7 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Transactional
     @Override
-    public ShipmentResponseDto markAsDelivered(@NonNull UUID shipmentUUID, ShipmentDeliveryRequest request) {
+    public ShipmentResponseDto markAsDelivered(UUID shipmentUUID, ShipmentDeliveryRequest request) {
         log.info("Marcando envío [{}] como entregado", shipmentUUID);
 
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(shipmentUUID);
@@ -209,11 +246,19 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Transactional
     @Override
-    public ShipmentResponseDto canceledShipment(@NonNull UUID id) {
+    public ShipmentResponseDto markWaitingPickuk(UUID shipmentId) {
+        Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(shipmentId);
+        shipment.markAsWaitingPickup();
+        return shipmentMapper.toShipmentResponseDto(shipment);
+    }
+
+    @Transactional
+    @Override
+    public ShipmentResponseDto canceledShipment(UUID id) {
         log.info("Cancelando envío [{}]", id);
         Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(id);
 
-        shipment.cancel(); // lógica de negocio dentro del modelo
+        shipment.cancel();
 
         shipmentRepository.save(shipment);
         log.info("Envío [{}] cancelado correctamente", id);
@@ -221,80 +266,26 @@ public class ShipmentServiceImpl implements ShipmentService {
         return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
-    @Transactional
-    private Person handlePersonCreateOrUpdate(ShipmentRequestDto shipmentDto, boolean isSender) {
-        PersonRequestDto personDto = isSender ? personMapper.shipmentDtoToPersonSenderDto(shipmentDto)
-                : personMapper.shipmentDtoToPersonRecipientDto(shipmentDto);
-
-        DocumentType documentType;
-        String documentNumber;
-
-        if (isSender) {
-            documentType = shipmentDto.sender().documentType();
-            documentNumber = shipmentDto.sender().documentNumber();
-        } else {
-            documentType = shipmentDto.recipient().documentType();
-            documentNumber = shipmentDto.recipient().documentNumber();
-        }
-
-        try {
-            // Intentar encontrar la persona por CI
-            Person existingPerson = personRepository.findByDocumentNumber(documentNumber).orElse(null);
-
-            if (existingPerson != null) {
-                // Actualizar persona existente
-                log.info("Actualizando persona existente con Numero de documento: {}", documentNumber);
-                updatePersonAttributes(personDto, existingPerson.getId());
-                return existingPerson;
-
-            } else {
-                // Crear nueva persona
-                log.info("Creando nueva persona con Numero de documento: {}", documentNumber);
-                personValidator.validateForCreate(personDto);
-                Person newPerson = personMapper.dtoToEntity(personDto);
-                return personRepository.save(newPerson);
-            }
-        } catch (DataAccessException e) {
-            log.error("Error al procesar persona: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    private void updatePersonAttributes(
-            PersonRequestDto personDto,
-            @NonNull UUID personId) {
-
-        personValidator.validateForUpdate(personDto, personId);
-
-        Person person = personValidator.getPersonByIdOrThrow(personId);
-
-        if (!person.getDocumentNumber().equals(personDto.documentNumber())) {
-            person.setDocumentNumber(personDto.documentNumber());
-        }
-        if (!person.getFullName().equals(personDto.fullName())) {
-            person.setFullName(personDto.fullName());
-        }
-        if (!person.getPhone().equals(personDto.phone())) {
-            person.setPhone(personDto.phone());
-        }
-    }
-
-    /*
-     * private void validatePersonInShipment(ShipmentUpdateRequestDto shipmentDto,
-     * Shipment shipment) {
-     * PersonRequestDto senderDto =
-     * personMapper.shipmentDtoToPersonSenderRequest(shipmentDto);
-     * UUID senderId = shipment.getSender().getId();
-     * personValidator.validateForUpdate(senderDto, senderId);
-     * 
-     * PersonRequestDto recipientDto =
-     * personMapper.shipmentDtoToPersonRecipientRequest(shipmentDto);
-     * UUID recipientId = shipment.getRecipient().getId();
-     * personValidator.validateForUpdate(recipientDto, recipientId);
-     * }
-     */
-
     // METODOS AUXILIARES
+    @Transactional
+    private Person handlePersonCreateOrUpdate(PersonRequestDto personDto) {
+        return personRepository.findByDocumentNumber(personDto.documentNumber())
+                .map(existingPerson -> updateExistingPerson(existingPerson, personDto))
+                .orElseGet(() -> createNewPerson(personDto));
+    }
+
+    private Person updateExistingPerson(Person existingPerson, PersonRequestDto dto) {
+        log.info("Actualizando persona: {}", dto.documentNumber());
+        personValidator.validateForUpdate(dto, existingPerson.getId());
+        return personMapper.updateAtributtePerson(existingPerson, dto);
+    }
+
+    private Person createNewPerson(PersonRequestDto dto) {
+        log.info("Creando nueva persona: {}", dto.documentNumber());
+        personValidator.validateForCreate(dto);
+        return personRepository.save(personMapper.dtoToEntity(dto));
+    }
+
     private ShipmentParty buildParty(Person person, ShipmentPartyRole role) {
 
         ShipmentParty party = new ShipmentParty();
@@ -308,4 +299,33 @@ public class ShipmentServiceImpl implements ShipmentService {
 
         return party;
     }
+
+    @Transactional
+    @Override
+    public ShipmentDispatchResponse dispatchShipments(UUID vehicleId, ShipmentDispatchRequest dispatches) {
+
+        Vehicle vehicle = vehicleValidator.getVehicleByIdOrThrow(vehicleId);
+
+        Set<String> trackingCodes = new HashSet<>();
+
+        for (UUID shipmentId : dispatches.shipmentUuid()) {
+            Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(shipmentId);
+            shipment.assignToVehicle(vehicle);
+            shipment.markInTransit();
+            trackingCodes.add(shipment.getTrackingCode());
+        }
+
+        return new ShipmentDispatchResponse(vehicle.getInternalCode(), trackingCodes);
+    }
+
+    @Transactional
+    @Override
+    public ShipmentResponseDto cancelDispatch(UUID shipmentId) {
+        Shipment shipment = shipmentValidator.getShipmentbyIdOrThrow(shipmentId);
+        shipment.markRegistered();
+        shipment.removeFromVehicle();
+        return shipmentMapper.toShipmentResponseDto(shipment);
+
+    }
+
 }

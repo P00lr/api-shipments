@@ -31,6 +31,7 @@ public class ShipmentMapper {
 
                 shipment.getItemDescription(),
                 shipment.getTrackingCode(),
+                shipment.getVehicle()    != null ? shipment.getVehicle().getInternalCode() : "Sin interno asignado" ,
 
                 shipment.getCreatedAt(),
                 shipment.getUpdatedAt(),

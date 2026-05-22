@@ -1,6 +1,6 @@
 package com.paul.shitment.shipment_service.controllers;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,10 +19,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentDeliveryRequest;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentDispatchRequest;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentDispatchResponse;
+import com.paul.shitment.shipment_service.dto.shipment.ShipmentReceivedRequest;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentResponseDto;
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
-import com.paul.shitment.shipment_service.dto.shipment.ShipmentUpdateRequestDto;
+import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.services.ShipmentService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,9 +47,11 @@ public class ShipmentController {
     @Operation(summary = "Obtener envíos paginados", description = "Retorna un listado paginado de todos los envíos registrados")
     @ApiResponse(responseCode = "200", description = "Listado de envíos obtenido exitosamente")
     @GetMapping
-    public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(@NonNull Pageable pageable) {
-
-        PageResponse<ShipmentResponseDto> response = shipmentService.getAllShipmentsPaged(pageable);
+    public ResponseEntity<PageResponse<ShipmentResponseDto>> getAllShipmentsPaged(
+        @RequestParam(required = false) ShipmentStatus status, 
+        @NonNull Pageable pageable) {
+            
+        PageResponse<ShipmentResponseDto> response = shipmentService.getAllShipmentsPaged(status, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -60,6 +64,16 @@ public class ShipmentController {
         return ResponseEntity.ok(shipmentService.getShipment(id));
     }
 
+    @Operation(summary = "Obtener envío por codigo de rastreo", description = "Retorna los datos completos de un envío específico por su codigo de rastreo")
+    @ApiResponse(responseCode = "200", description = "Envío encontrado")
+    @ApiResponse(responseCode = "404", description = "Envío no encontrado")
+    @GetMapping("/tracking-code/{trackingCode}")
+    public ResponseEntity<ShipmentResponseDto> getShipmentByTrackingCode(
+            @Parameter(description = "trackingCode del envío") @NonNull @PathVariable String trackingCode) {
+        return ResponseEntity.ok(shipmentService.getShipmentByTrackingCode(trackingCode));
+    }
+
+
     @Operation(summary = "Crear nuevo envío", description = "Crea un nuevo envío con los datos del remitente, destinatario e item")
     @ApiResponse(responseCode = "200", description = "Envío creado exitosamente")
     @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
@@ -69,13 +83,17 @@ public class ShipmentController {
         return ResponseEntity.ok(shipmentService.createShipment(shipmentDto));
     }
 
-    /* @Operation(summary = "Actualizar un envío existente")
-    @PutMapping("/{id}")
-    public ResponseEntity<ShipmentResponseDto> updateShipment(
-            @Parameter(description = "UUID del envío a actualizar") @NonNull @PathVariable UUID id,
-            @Parameter(description = "Datos actualizados del envío") @Valid @RequestBody ShipmentUpdateRequestDto shipmentDto) {
-        return ResponseEntity.ok(shipmentService.updateShipment(id, shipmentDto));
-    } */
+    @PostMapping("/received")
+    public ResponseEntity<Set<ShipmentResponseDto>> shipmentReceived(@RequestBody ShipmentReceivedRequest dto) {
+        return ResponseEntity.ok(shipmentService.shipmentReceived(dto));
+    }
+
+    @PostMapping("/dispatch/{vehicleId}")
+    public ResponseEntity<ShipmentDispatchResponse> createDispatch(
+        @PathVariable UUID vehicleId, 
+        @RequestBody ShipmentDispatchRequest dispatchRequest) {
+            return ResponseEntity.ok(shipmentService.dispatchShipments(vehicleId, dispatchRequest));
+    }
 
     @Operation(summary = "Cancelar envío", description = "Realiza una eliminación lógica (soft delete) de un envío")
     @ApiResponse(responseCode = "200", description = "Envío cancelado exitosamente")
@@ -91,7 +109,7 @@ public class ShipmentController {
     @GetMapping("/suggestions")
     public ResponseEntity<PageResponse<ShipmentSuggestionDTO>> getSuggestions(
             @Parameter(description = "Término de búsqueda") @RequestParam(name = "term", defaultValue = "") String term,
-            @Parameter(description = "Configuración de paginación") Pageable pageable) {
+            @Parameter(description = "Configuración de paginación") @NonNull Pageable pageable) {
         PageResponse<ShipmentSuggestionDTO> response = shipmentService.getSuggestions(term, pageable);
         return ResponseEntity.ok(response);
     }
@@ -107,5 +125,12 @@ public class ShipmentController {
 
         return ResponseEntity.ok(shipmentService.markAsDelivered(shipmentUUID, request));
     }
+
+    @PatchMapping("cancel-dispatch/{shipmentId}")
+    public ResponseEntity<ShipmentResponseDto> cancelDispatch(@PathVariable UUID shipmentId) {
+        return ResponseEntity.ok(shipmentService.cancelDispatch(shipmentId));
+    }
+
+    
 }
 

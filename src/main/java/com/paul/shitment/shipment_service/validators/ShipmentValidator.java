@@ -1,9 +1,7 @@
 package com.paul.shitment.shipment_service.validators;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentRequestDto;
@@ -15,6 +13,7 @@ import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
 
 import jakarta.validation.ValidationException;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,11 +25,15 @@ public class ShipmentValidator {
 
     private final OfficeValidator officeValidation;
 
-    private final PersonValidator personValidator;
 
     public Shipment getShipmentbyIdOrThrow(@NonNull UUID id) {
         return shipmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con id: " + id));
+    }
+
+    public Shipment getShipmentbyTrackingCodeOrThrow(String trackingCode) {
+        return shipmentRepository.findByTrackingCode(trackingCode)
+                .orElseThrow(() -> new ResourceNotFoundException("No se encontro el envio con codigo de rastreo: " + trackingCode));
     }
 
     public void validateForCreate(ShipmentRequestDto shipmentDto) {

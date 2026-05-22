@@ -1,6 +1,7 @@
 package com.paul.shitment.shipment_service.repositories;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -12,9 +13,15 @@ import org.springframework.stereotype.Repository;
 
 import com.paul.shitment.shipment_service.dto.shipment.ShipmentSuggestionDTO;
 import com.paul.shitment.shipment_service.models.entities.Shipment;
+import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 
 @Repository
 public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
+
+    Optional<Shipment> findByTrackingCode(String trackingCode);
+
+    Page<Shipment> findByStatus(ShipmentStatus status, Pageable pageable);
+
 
     boolean existsByTrackingCode(String code);
 
@@ -82,7 +89,7 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
                 FROM Shipment s
                 JOIN s.parties sp
                 WHERE sp.role = com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole.RECIPIENT
-                    AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.REGISTERED
+                    AND s.status = com.paul.shitment.shipment_service.models.enums.ShipmentStatus.WAITING_PICKUP
                     AND (
                         LOWER(s.trackingCode) LIKE LOWER(CONCAT('%', :term, '%')) OR
                         LOWER(sp.documentNumber) LIKE LOWER(CONCAT('%', :term, '%')) OR

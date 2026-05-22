@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.paul.shitment.shipment_service.dto.person.PersonResponseDto;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -67,6 +66,8 @@ public record ShipmentResponseDto(
                 example = "AB3-C4D",
                 requiredMode = RequiredMode.REQUIRED)
         String trackingCode,
+
+        String vehicleInternal,
 
 
         //----------------------------------------------------------------

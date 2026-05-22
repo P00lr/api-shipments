@@ -24,6 +24,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.PositiveOrZero;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,7 +33,6 @@ import lombok.Setter;
 
 @Builder()
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
@@ -62,6 +62,7 @@ public class Shipment {
 
     private LocalDateTime deliveredAt;
 
+    @Setter(AccessLevel.PRIVATE)
     @Enumerated(EnumType.STRING)
     private ShipmentStatus status;
 
@@ -78,7 +79,11 @@ public class Shipment {
     private AppUser createdBy;
 
     @OneToMany(mappedBy = "shipment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<ShipmentParty> parties = new HashSet<>();
+
+    @ManyToOne
+    private Vehicle vehicle;
 
     @PrePersist
     public void prePersist() {
@@ -91,11 +96,15 @@ public class Shipment {
     }
 
     public void deliver() {
-        if (this.status == ShipmentStatus.DELIVERED) {
+        
+        if(status != ShipmentStatus.WAITING_PICKUP)
+            throw new ShipmentValidationException("El envio no puede ser entregado al cliente");
+        
+        if (status == ShipmentStatus.DELIVERED)
             throw new ShipmentValidationException("El envío ya fue entregado");
-        }
-        this.status = ShipmentStatus.DELIVERED;
-        this.deliveredAt = LocalDateTime.now();
+            
+        status = ShipmentStatus.DELIVERED;
+        deliveredAt = LocalDateTime.now();
     }
 
     public void cancel() {
@@ -116,36 +125,35 @@ public class Shipment {
         party.setShipment(this);
     }
 
-    /*
-     * public void updateFromShipmentUpdateRequestDto(ShipmentUpdateRequestDto
-     * shipmentDto) {
-     * if (!shipmentDto.senderName().equals(this.getSender().getName()))
-     * this.getSender().setName(shipmentDto.senderName());
-     * 
-     * if (!shipmentDto.senderCI().equals(this.getSender().getCi()) &&
-     * !shipmentDto.senderCI().isEmpty())
-     * this.getSender().setCi(shipmentDto.senderCI());
-     * 
-     * if (!shipmentDto.senderPhone().equals(this.getSender().getPhone()))
-     * this.getSender().setPhone(shipmentDto.senderPhone());
-     * 
-     * if (!shipmentDto.recipientName().equals(this.getRecipient().getName()))
-     * this.getRecipient().setName(shipmentDto.recipientName());
-     * 
-     * if (!shipmentDto.recipientCI().equals(this.getRecipient().getCi()) &&
-     * !shipmentDto.recipientCI().isEmpty())
-     * this.getRecipient().setCi(shipmentDto.recipientCI());
-     * 
-     * if (!shipmentDto.recipientPhone().equals(this.getRecipient().getPhone()))
-     * this.getRecipient().setPhone(shipmentDto.recipientPhone());
-     * 
-     * if (!this.getItemDescription().equals(shipmentDto.itemDescription()))
-     * this.setItemDescription(shipmentDto.itemDescription());
-     * 
-     * if (this.getShippingCost() != shipmentDto.shippingCost()) {
-     * this.setShippingCost(shipmentDto.shippingCost());
-     * }
-     * }
-     */
+    public void markAsWaitingPickup() {
+        if (status != ShipmentStatus.IN_TRANSIT) {
+            throw new ShipmentValidationException(
+                    "El envio no se ha enviado a destino, no puede ser entregado al cliente");
+        }
+        status = ShipmentStatus.WAITING_PICKUP;
+    }
+
+    public void markRegistered() {
+        status = ShipmentStatus.REGISTERED;
+    }
+
+    public void markInTransit() {
+        status = ShipmentStatus.IN_TRANSIT;
+    }
+
+    public void assignToVehicle(Vehicle vehicle) {
+        if (vehicle == null) {
+            throw new ShipmentValidationException("El vehículo no puede ser nulo");
+        }
+        // Ejemplo de regla: solo asignar si el envío está registrado
+        if (this.status != ShipmentStatus.REGISTERED) {
+            throw new ShipmentValidationException("Solo se pueden asignar envíos en estado REGISTERED");
+        }
+        this.vehicle = vehicle;
+    }
+
+    public void removeFromVehicle() {
+        this.vehicle = null;
+    }
 
 }
