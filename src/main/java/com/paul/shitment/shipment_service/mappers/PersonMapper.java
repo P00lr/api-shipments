@@ -87,4 +87,12 @@ public class PersonMapper {
 
         return person;
     }
+
+    public Person updateAtributtePerson(Person person, PersonRequestDto dto) {
+        person.setDocumentType(dto.documentType());
+        person.setDocumentNumber(dto.documentNumber());
+        person.setFullName(dto.fullName());
+        person.setPhone(dto.phone());
+        return person;
+    }
 }

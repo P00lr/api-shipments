@@ -56,10 +56,10 @@ public class PersonController {
     @Operation(summary = "Obtener persona por CI", description = "Retorna los datos de una persona usando su número de documento (CI)")
     @ApiResponse(responseCode = "200", description = "Persona encontrada")
     @ApiResponse(responseCode = "404", description = "Persona con ese CI no existe")
-    @GetMapping("/ci/{ci}")
+    @GetMapping("/documentNumber/{documentNumber}")
     public ResponseEntity<PersonResponseDto> getPersonByCI(
-            @Parameter(description = "CI de la persona") @PathVariable String ci) {
-        return ResponseEntity.ok(personService.getPersonByCI(ci));
+            @Parameter(description = "CI de la persona") @PathVariable String documentNumber) {
+        return ResponseEntity.ok(personService.getPersonByCI(documentNumber));
     }
 
     @Operation(summary = "Verificar existencia por teléfono", description = "Verifica si existe una persona registrada con el número de teléfono proporcionado")
