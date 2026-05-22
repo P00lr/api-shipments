@@ -65,7 +65,10 @@ public class SecurityConfig {
 
                                                 .requestMatchers(HttpMethod.GET,
                                                                 "/api/v1/transportCooperatives",
+
                                                                 "/api/v1/transportCooperatives/**",
+
+                                                                "/api/v1/vehicle", "/api/v1/vehicle/**",
 
                                                                 "/api/v1/offices", "/api/v1/offices/**",
 
@@ -83,6 +86,7 @@ public class SecurityConfig {
                                                 // rutas protegidas  solo ADMIN puede crear/modificar/eliminar
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
+                                                .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.DELETE, "/api/v1/**").hasRole("ADMIN")
 
                                                 .anyRequest().authenticated())// cualquier otra ruta requiere
