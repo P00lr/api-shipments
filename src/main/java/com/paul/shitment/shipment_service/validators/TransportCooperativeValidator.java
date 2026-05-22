@@ -2,7 +2,6 @@ package com.paul.shitment.shipment_service.validators;
 
 import java.util.UUID;
 
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import com.paul.shitment.shipment_service.dto.transportCooperative.TransportCooperativeRequest;
 import com.paul.shitment.shipment_service.exceptions.validation.ResourceNotFoundException;
@@ -10,6 +9,7 @@ import com.paul.shitment.shipment_service.exceptions.validation.TransportCoopera
 import com.paul.shitment.shipment_service.models.entities.TransportCooperative;
 import com.paul.shitment.shipment_service.repositories.TransportCooperativeRepository;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Component

@@ -41,6 +41,9 @@ public class TransportCooperative {
     @JoinColumn(name = "transport_cooperative_id")
     private Set<Office> offices = new HashSet<>();
 
+    @OneToMany(mappedBy = "cooperative")
+    private Set<Vehicle> vehicles = new HashSet<>();
+
     public void updateFromShipmentUpdateRequestDto(TransportCooperativeRequest request) {
         this.name = request.name();
         this.enabled = request.enabled();
