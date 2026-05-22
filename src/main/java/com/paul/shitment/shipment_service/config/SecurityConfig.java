@@ -56,7 +56,9 @@ public class SecurityConfig {
                                                 // rutas públicas de autenticación (login, register, logout)
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/error").permitAll()
-                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                                                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**",
+                                                                "/swagger-ui.html")
+                                                .permitAll()
 
                                                 // rutas públicas solo de lectura (cualquiera puede ver)
                                                 .requestMatchers(HttpMethod.GET,
@@ -77,13 +79,13 @@ public class SecurityConfig {
                                                                 "/api/v1/users", "/api/v1/users",
 
                                                                 "/api/v1/permissions", "/api/v1/permissions/**",
-                                                                
+
                                                                 "/api/v1/roles", "/api/v1/roles/**")
-                                        
+
                                                 .hasRole("ADMIN") // solo ADMIN puede ver datos de
                                                                   // configuración/usuarios/roles
 
-                                                // rutas protegidas  solo ADMIN puede crear/modificar/eliminar
+                                                // rutas protegidas solo ADMIN puede crear/modificar/eliminar
                                                 .requestMatchers(HttpMethod.POST, "/api/v1/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.PUT, "/api/v1/**").hasRole("ADMIN")
                                                 .requestMatchers(HttpMethod.PATCH, "/api/v1/**").hasRole("ADMIN")
@@ -110,7 +112,8 @@ public class SecurityConfig {
                                 "http://localhost:3000",
                                 "http://localhost:5173",
                                 "http://localhost:4200",
-                                "https://guileless-gumdrop-0b2da7.netlify.app"));
+                                "https://guileless-gumdrop-0b2da7.netlify.app",
+                                "https://www.paulguasace.com"));
 
                 // métodos HTTP permitidos
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
