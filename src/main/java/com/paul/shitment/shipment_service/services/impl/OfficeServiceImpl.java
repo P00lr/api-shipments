@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.services.impl;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
+import com.paul.shitment.shipment_service.dto.office.OfficeResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.mappers.OfficeMapper;
 import com.paul.shitment.shipment_service.mappers.PaginationMapper;
@@ -38,6 +40,12 @@ public class OfficeServiceImpl implements OfficeService {
         Page<Office> officesPage = officeRepository.findAll(pageable);
 
         return paginationMapper.toPageResponseDto(officesPage, officeMapper::toDto);
+    }
+
+    @Override
+    public List<OfficeResponse> getAllOffices() {
+        log.info("Verificando lista de oficinas");
+        return officeMapper.toOfficesDto(officeRepository.findAll());
     }
 
     @Override
@@ -85,4 +93,6 @@ public class OfficeServiceImpl implements OfficeService {
 
         return officeMapper.toDto(office);
     }
+
+    
 }

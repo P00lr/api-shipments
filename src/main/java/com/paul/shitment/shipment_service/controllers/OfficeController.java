@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.paul.shitment.shipment_service.dto.PageResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeRequestDto;
+import com.paul.shitment.shipment_service.dto.office.OfficeResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.services.OfficeService;
 
@@ -43,6 +45,11 @@ public class OfficeController {
     @GetMapping("/paged")
     public ResponseEntity<PageResponse<OfficeResponseDto>> getAllOffices(@NonNull Pageable pageable) {
         return ResponseEntity.ok(officeService.getAllOfficesPaged(pageable));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<OfficeResponse>> getAllOffices() {
+        return ResponseEntity.ok(officeService.getAllOffices());
     }
 
 
