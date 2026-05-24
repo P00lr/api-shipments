@@ -15,9 +15,11 @@ import com.paul.shitment.shipment_service.dto.office.OfficeResponse;
 import com.paul.shitment.shipment_service.dto.office.OfficeResponseDto;
 import com.paul.shitment.shipment_service.mappers.OfficeMapper;
 import com.paul.shitment.shipment_service.mappers.PaginationMapper;
+import com.paul.shitment.shipment_service.models.entities.AppUser;
 import com.paul.shitment.shipment_service.models.entities.Office;
 import com.paul.shitment.shipment_service.repositories.OfficeRepository;
 import com.paul.shitment.shipment_service.services.OfficeService;
+import com.paul.shitment.shipment_service.services.ShipmentService;
 import com.paul.shitment.shipment_service.validators.OfficeValidator;
 
 import lombok.AllArgsConstructor;
@@ -32,6 +34,7 @@ public class OfficeServiceImpl implements OfficeService {
     private final OfficeRepository officeRepository;
     private final OfficeMapper officeMapper;
     private final PaginationMapper paginationMapper;
+    private final ShipmentService shipmentService;
 
     @Override
     public PageResponse<OfficeResponseDto> getAllOfficesPaged(@NonNull Pageable pageable) {
@@ -46,6 +49,18 @@ public class OfficeServiceImpl implements OfficeService {
     public List<OfficeResponse> getAllOffices() {
         log.info("Verificando lista de oficinas");
         return officeMapper.toOfficesDto(officeRepository.findAll());
+    }
+
+    @Override
+    public List<OfficeResponse> getOfficeAvailableDestination() {
+        log.info("Lista de oficinas disponible para destino");
+        AppUser user = shipmentService.getUserOfContext();
+        UUID officeId = user.getOffice().getId();
+
+        //omitiendo la oficina de origen
+        List<Office> offices = officeRepository.findByIdNot(officeId);
+        
+        return officeMapper.toOfficesDto(offices); 
     }
 
     @Override

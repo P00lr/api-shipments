@@ -17,6 +17,8 @@ public interface OfficeService {
 
     List<OfficeResponse> getAllOffices();
 
+    List<OfficeResponse> getOfficeAvailableDestination();
+
     OfficeResponseDto getOfficeById(@NonNull UUID id);
 
     OfficeResponseDto createOffice(OfficeRequestDto dto);

@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.repositories;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,4 +11,5 @@ public interface OfficeRepository extends JpaRepository<Office, UUID>{
     boolean existsByName(String name);
     boolean existsByAddress(String address);
     boolean existsByPhone(String phone);
+    List<Office> findByIdNot(UUID officeId);
 }

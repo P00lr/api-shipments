@@ -52,6 +52,11 @@ public class OfficeController {
         return ResponseEntity.ok(officeService.getAllOffices());
     }
 
+    @GetMapping("/destinations")
+    public ResponseEntity<List<OfficeResponse>> getOfficeAvailableDestination() {
+        return ResponseEntity.ok(officeService.getOfficeAvailableDestination());
+    }
+
 
     @Operation(summary = "Obtener oficina por ID", description = "Retorna los datos completos de una oficina específica por su UUID")
     @ApiResponse(responseCode = "200", description = "Oficina encontrada")
