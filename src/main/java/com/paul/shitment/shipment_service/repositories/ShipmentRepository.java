@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.repositories;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,8 +21,17 @@ public interface ShipmentRepository extends JpaRepository<Shipment, UUID> {
 
     Optional<Shipment> findByTrackingCode(String trackingCode);
 
-    Page<Shipment> findByStatus(ShipmentStatus status, Pageable pageable);
+    Page<Shipment> findByOriginOfficeIdAndStatus(UUID officeId, ShipmentStatus status, Pageable pageable);
 
+    Page<Shipment> findByDestinationOfficeIdAndStatus(UUID officeId, ShipmentStatus status, Pageable pageable);
+
+    // Filtra usando tu atributo específico de entrega
+    Page<Shipment> findByDestinationOfficeIdAndStatusAndDeliveredAtBetween(
+            UUID officeId,
+            ShipmentStatus status,
+            LocalDateTime start,
+            LocalDateTime end,
+            Pageable pageable);
 
     boolean existsByTrackingCode(String code);
 

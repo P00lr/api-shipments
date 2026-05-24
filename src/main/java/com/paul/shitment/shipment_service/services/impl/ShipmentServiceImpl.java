@@ -1,7 +1,9 @@
 package com.paul.shitment.shipment_service.services.impl;
 
 import java.security.SecureRandom;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
@@ -76,21 +78,42 @@ public class ShipmentServiceImpl implements ShipmentService {
 
     @Override
     public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(ShipmentStatus status, Pageable pageable) {
-        log.info("Buscando registros de shipments paginados");
+        log.info("Buscando registros de shipments paginados para el estado requerido: {}", status);
 
-        // Si pageable es nulo, creamos uno por defecto ordenado por fecha de creación
-        // descendente
-        Pageable pageRequest = (pageable != null) ? 
-            pageable : 
-            PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        if (status == null) {
+            throw new IllegalArgumentException("El estado del envío es requerido para realizar el listado.");
+        }
+
+        AppUser user = getUserOfContext();
+        UUID officeId = user.getOffice().getId();
+
+        Pageable pageRequest = (pageable != null) ? pageable : PageRequest.of(0, 10, Sort.by("createdAt").descending());
 
         if (pageable != null && pageable.getSort().isUnsorted()) {
             pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                     Sort.by("createdAt").descending());
         }
 
-        Page<Shipment> shipmentsPaged = (status != null) ? shipmentRepository.findByStatus(status, pageRequest)
-                : shipmentRepository.findAll(pageRequest);
+        Page<Shipment> shipmentsPaged;
+
+        if (status == ShipmentStatus.REGISTERED || status == ShipmentStatus.IN_TRANSIT) {
+            // Control de Salidas
+            shipmentsPaged = shipmentRepository.findByOriginOfficeIdAndStatus(officeId, status, pageRequest);
+
+        } else if (status == ShipmentStatus.DELIVERED) {
+            // Filtramos estrictamente por tu atributo deliveredAt entre las 00:00 y las
+            // 23:59 de hoy
+            LocalDate today = LocalDate.now();
+            LocalDateTime startOfDay = today.atStartOfDay();
+            LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+            shipmentsPaged = shipmentRepository.findByDestinationOfficeIdAndStatusAndDeliveredAtBetween(
+                    officeId, status, startOfDay, endOfDay, pageRequest);
+
+        } else {
+            // Control de Entradas (WAITING_PICKUP)
+            shipmentsPaged = shipmentRepository.findByDestinationOfficeIdAndStatus(officeId, status, pageRequest);
+        }
 
         return paginationMapper.toPageResponseDto(shipmentsPaged, shipmentMapper::toShipmentResponseDto);
     }
@@ -99,7 +122,6 @@ public class ShipmentServiceImpl implements ShipmentService {
     public PageResponse<ShipmentSuggestionDTO> getSuggestions(String term, Pageable pageable) {
         log.info("Buscando sugerencias de envíos con término: {}", term);
         String validatedTerm = shipmentValidator.validateTerm(term);
-
 
         Pageable paginationRequest = PageRequest.of(pageable.getPageNumber(),
                 Math.min(pageable.getPageSize(), MAX_RESULTS_CI_PHONE));
@@ -128,7 +150,8 @@ public class ShipmentServiceImpl implements ShipmentService {
         return shipmentMapper.toShipmentResponseDto(shipment);
     }
 
-    private AppUser getUserOfContext() {
+    @Override
+    public AppUser getUserOfContext() {
         // Leemos el contexto de seguridad con precaución
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
@@ -169,7 +192,7 @@ public class ShipmentServiceImpl implements ShipmentService {
                 destinationOffice,
                 user);
 
-            shipmentRepository.save(shipment);
+        shipmentRepository.save(shipment);
 
         log.info("Shipment [{}] creado correctamente");
 
