@@ -5,6 +5,9 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -149,9 +152,27 @@ public class GlobalExceptionHandler {
 
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseDto> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+
+        log.warn("JSON mal formado o tipo inválido: {}", ex.getMessage());
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.BAD_REQUEST.name(),
+                "El formato del request es inválido",
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDto> handleGlobalException(Exception ex, HttpServletRequest request) {
         log.error("Error no controlado: ", ex);
+
         ErrorResponseDto error = new ErrorResponseDto(
                 HttpStatus.INTERNAL_SERVER_ERROR.name(),
                 "Ocurrió un error inesperado",
@@ -161,4 +182,33 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(AuthenticationServiceException.class)
+    public ResponseEntity<ErrorResponseDto> handleAuthenticationException(
+            AuthenticationServiceException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.UNAUTHORIZED.name(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<ErrorResponseDto> handleLockedException(
+            LockedException ex,
+            HttpServletRequest request) {
+
+        ErrorResponseDto error = new ErrorResponseDto(
+                HttpStatus.LOCKED.name(),
+                ex.getMessage(),
+                LocalDateTime.now(),
+                HttpStatus.LOCKED.value(),
+                request.getRequestURI());
+
+        return new ResponseEntity<>(error, HttpStatus.LOCKED);
+    }
 }
