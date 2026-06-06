@@ -42,6 +42,7 @@ import com.paul.shitment.shipment_service.models.enums.ShipmentPartyRole;
 import com.paul.shitment.shipment_service.models.enums.ShipmentStatus;
 import com.paul.shitment.shipment_service.repositories.PersonRepository;
 import com.paul.shitment.shipment_service.repositories.ShipmentRepository;
+import com.paul.shitment.shipment_service.security.service.impl.AuthenticatedUserResolver;
 import com.paul.shitment.shipment_service.services.ShipmentService;
 import com.paul.shitment.shipment_service.validators.OfficeValidator;
 import com.paul.shitment.shipment_service.validators.PersonValidator;
@@ -75,6 +76,8 @@ public class ShipmentServiceImpl implements ShipmentService {
     private final PaginationMapper paginationMapper;
 
     private final VehicleValidator vehicleValidator;
+
+    private final AuthenticatedUserResolver authUserResolver; // ✅ inyectado
 
     @Override
     public PageResponse<ShipmentResponseDto> getAllShipmentsPaged(ShipmentStatus status, Pageable pageable) {
@@ -180,21 +183,14 @@ public class ShipmentServiceImpl implements ShipmentService {
     public ShipmentResponseDto createShipment(@NonNull ShipmentRequestDto shipmentDto) {
         log.info("Creando nuevo shipment...");
 
-        AppUser user = getUserOfContext();
-
+        AppUser user = authUserResolver.resolve();
         Office originOffice = officeValidation.getOfficeByIdOrThrow(user.getOffice().getId());
+        Office destOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
 
-        Office destinationOffice = officeValidation.getOfficeByIdOrThrow(shipmentDto.destinationOfficeId());
-
-        Shipment shipment = createProcessShipment(
-                shipmentDto,
-                originOffice,
-                destinationOffice,
-                user);
+        Shipment shipment = createProcessShipment(shipmentDto, originOffice, destOffice, user);
 
         shipmentRepository.save(shipment);
-
-        log.info("Shipment [{}] creado correctamente");
+        log.info("Shipment [{}] creado correctamente", shipment.getInternalCode());
 
         return shipmentMapper.toShipmentResponseDto(shipment);
     }
