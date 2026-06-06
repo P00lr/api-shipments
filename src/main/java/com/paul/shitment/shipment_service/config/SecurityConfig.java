@@ -1,5 +1,6 @@
 package com.paul.shitment.shipment_service.config;
 
+import com.paul.shitment.shipment_service.security.filter.RateLimitFilter;
 import java.util.List;
 
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+        private final RateLimitFilter rateLimitFilter;
         private final AuthenticationProvider authenticationProvider;
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
         private final RestAuthenticationEntryPoint entryPoint;
@@ -98,7 +100,8 @@ public class SecurityConfig {
                                                                                // usuario/contraseña
 
                                 // el portero JWT revisa el boleto antes que cualquier otro
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+                                .addFilterAfter(jwtAuthenticationFilter, RateLimitFilter.class);
 
                 return http.build();
         }
@@ -113,7 +116,7 @@ public class SecurityConfig {
                                 "http://localhost:5173",
                                 "http://localhost:4200",
                                 "https://guileless-gumdrop-0b2da7.netlify.app",
-                                "https://www.paulguasace.com"));
+                                "https://enviospaulguasace.com"));
 
                 // métodos HTTP permitidos
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
