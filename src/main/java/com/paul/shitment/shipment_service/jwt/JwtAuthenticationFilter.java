@@ -90,7 +90,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception ex) {
             handleException(request, response, "Error interno en la autenticación");
         }
-
     }
 
     // METODOS AUXILIARES

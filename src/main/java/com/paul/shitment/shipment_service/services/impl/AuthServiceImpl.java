@@ -1,6 +1,6 @@
 package com.paul.shitment.shipment_service.services.impl;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -10,9 +10,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.paul.shitment.shipment_service.dto.auth.LoginRequestDto;
@@ -22,6 +20,7 @@ import com.paul.shitment.shipment_service.dto.user.UserRequestDto;
 import com.paul.shitment.shipment_service.dto.user.UserResponseDto;
 import com.paul.shitment.shipment_service.jwt.JwtUtil;
 import com.paul.shitment.shipment_service.models.entities.AppUser;
+import com.paul.shitment.shipment_service.models.entities.Role;
 import com.paul.shitment.shipment_service.security.service.LoginAttemptService;
 import com.paul.shitment.shipment_service.services.AuthService;
 import com.paul.shitment.shipment_service.services.UserService;
@@ -35,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    // maneja lógica de usuarios (registro)
     private final UserService userService;
 
     // valida usuario + contraseña contra Spring Security
@@ -49,13 +47,11 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserValidator userValidator;
 
-
     @Override
     public UserResponseDto registerUser(UserRequestDto userDto) {
 
         log.info("Registrando nuevo usuario: {}", userDto.username());
 
-        // delega creación al dominio de usuarios
         UserResponseDto user = userService.createUser(userDto);
 
         log.info("Usuario registrado correctamente");
@@ -63,66 +59,64 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponseDto login(LoginRequestDto request) {
+    public LoginResponseDto login(LoginRequestDto request, String clientIp) {
 
-        // Extrae el username del request
-        String username = request.username();
+        checkIfBlocked(clientIp); // bloquea por IP
 
-        // Verifica si el usuario está bloqueado por intentos fallidos
-        if (loginAttemptService.isBlocked(username)) {
-            throw new LockedException("Usuario bloqueado temporalmente por demasiados intentos");
+        Authentication auth = authenticate(clientIp, request.username().trim(), request.password());
+
+        return buildLoginResponse(request.username().trim(), auth);
+    }
+
+    private void checkIfBlocked(String username) {
+        boolean blocked = loginAttemptService.isBlocked(username);
+        log.info("Usuario [{}] bloqueado: {}", username, blocked);
+        if (blocked) {
+            throw new LockedException(
+                    "Usuario bloqueado temporalmente. Intenta en unos minutos.");
         }
+    }
 
+    // ─── Paso 2: Autenticar con Spring Security ───────────────────────────────
+    private Authentication authenticate(String clientIp, String username, String password) {
         try {
-            // Intenta autenticar usando Spring Security
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            request.password()));
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password));
 
-            // Si llegó aquí, el login fue exitoso → se limpian intentos fallidos
-            loginAttemptService.loginSucceeded(username);
-
-            // Se guarda el usuario autenticado en el contexto de seguridad
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-
-            // Se obtiene la información del usuario autenticado
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-
-            // Se extraen los roles del usuario
-            List<String> roles = userDetails.getAuthorities()
-                    .stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
-
-            AppUser user = userValidator.getUserByUsernameOrThrow(username);
-
-            // Se genera el token JWT con id, username y roles
-            String token = jwtUtil.generatedToken(
-                    user.getId(),
-                    userDetails.getUsername(),
-                    user.getOffice().getId(),
-                    roles);
-
-            //harcodeado user y sus roles
-            Set<String> rolesToken = user.getRoles().stream()
-                .map(role -> role.getName())
-                .collect(Collectors.toSet());
-
-                //agregando payload para trabajar en el front
-            UserLoginRequest userData =  new UserLoginRequest(username, rolesToken);
-                
-            // Se devuelve el token al frontend
-            return new LoginResponseDto(token, userData);
+            loginAttemptService.loginSucceeded(clientIp);
+            return auth;
 
         } catch (BadCredentialsException ex) {
-            // Si las credenciales son incorrectas → registra intento fallido
-            loginAttemptService.loginFailed(username);
-
-            // Lanza excepción controlada para respuesta clara
+            loginAttemptService.loginFailed(clientIp); // registra fallo por IP
             throw new AuthenticationServiceException(
                     "Usuario o contraseña incorrectos. Verifica tus datos y vuelve a intentar.");
         }
+    }
+
+    // ─── Paso 3: Construir respuesta ──────────────────────────────────────────
+    private LoginResponseDto buildLoginResponse(String username, Authentication authentication) {
+        AppUser user = userValidator.getUserByUsernameOrThrow(username);
+
+        // Fuente única de verdad: los roles vienen de AppUser
+        Set<String> roles = extractRoles(user);
+
+        String token = jwtUtil.generatedToken(
+                user.getId(),
+                username,
+                user.getOffice().getId(),
+                new ArrayList<>(roles));
+
+        UserLoginRequest userData = new UserLoginRequest(username, roles);
+
+        return new LoginResponseDto(token, userData);
+    }
+
+    // ─── Utilidad: extracción de roles (única fuente de verdad) ──────────────
+    private Set<String> extractRoles(AppUser user) {
+        return user.getRoles()
+                .stream()
+                .map(Role::getName)
+                .collect(Collectors.toSet());
     }
 
     @Override

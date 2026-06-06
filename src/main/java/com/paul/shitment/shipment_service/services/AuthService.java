@@ -10,7 +10,7 @@ public interface AuthService {
 
     UserResponseDto registerUser(UserRequestDto userDto);
 
-    LoginResponseDto login(LoginRequestDto request);
+    LoginResponseDto login(LoginRequestDto request, String clientIp);
     
     void logout(String username);
 }

@@ -14,23 +14,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.paul.shitment.shipment_service.models.entities.AppUser;
 import com.paul.shitment.shipment_service.models.entities.Role;
-import com.paul.shitment.shipment_service.validators.UserValidator;
+import com.paul.shitment.shipment_service.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserDetailsServiceImpl implements UserDetailsService {
 
-    private final UserValidator userValidator;
-    // componente encargado de buscar y validar al usuario en la base de datos
+    private final UserRepository userRepository;
 
     @Override
     @Transactional // permite cargar roles con lazy sin errores de sesión
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
-        // busca al usuario por su nombre verifica que exista en el sistema
-        AppUser user = userValidator.getUserByUsernameOrThrow(username);
+        AppUser user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
 
         // convierte los roles del usuario en permisos que Spring Security entiende
         Set<GrantedAuthority> authorities = user.getRoles().stream()

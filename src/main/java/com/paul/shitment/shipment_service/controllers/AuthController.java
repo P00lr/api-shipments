@@ -17,6 +17,7 @@ import com.paul.shitment.shipment_service.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -38,12 +39,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Autenticar usuario", description = "Autentica un usuario y retorna un token JWT para acceso posterior")
-    @ApiResponse(responseCode = "200", description = "Autenticación exitosa, token generado")
-    @ApiResponse(responseCode = "401", description = "Credenciales inválidas")
     public ResponseEntity<LoginResponseDto> login(
-            @Valid @RequestBody LoginRequestDto request) {
-        return ResponseEntity.ok(authService.login(request));
+            @Valid @RequestBody LoginRequestDto request,
+            HttpServletRequest httpRequest) {
+
+        String clientIp = extractClientIp(httpRequest);
+        return ResponseEntity.ok(authService.login(request, clientIp));
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     @PostMapping("/logout")
@@ -55,4 +64,3 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 }
-
