@@ -116,7 +116,7 @@ public class SecurityConfig {
                                 "http://localhost:5173",
                                 "http://localhost:4200",
                                 "https://guileless-gumdrop-0b2da7.netlify.app",
-                                "https://enviospaulguasace.com"));
+                                "https://envios.paulguasace.com"));
 
                 // métodos HTTP permitidos
                 config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
